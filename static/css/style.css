@@ -1,0 +1,1507 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+/* ============================================
+   RESTOBOOST CUSTOM STYLES
+   ============================================ */
+
+:root {
+    --primary-color: #3b82f6;
+    --primary-dark: #2563eb;
+    --primary-light: #dbeafe;
+    --secondary-color: #10b981;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --dark-color: #1f2937;
+    --light-gray: #f3f4f6;
+    --purple-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --green-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --red-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --blue-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+
+/* ============================================
+   GLOBAL STYLES
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* ============================================
+   LOGO
+   ============================================ */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--dark-color);
+}
+
+.logo-icon {
+    width: 50px;
+    height: 50px;
+    background: var(--purple-gradient);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+}
+
+/* ============================================
+   RESTAURANT CARDS
+   ============================================ */
+.restaurant-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+}
+
+.restaurant-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.restaurant-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.restaurant-card:hover::before {
+    opacity: 1;
+}
+
+.restaurant-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.restaurant-card a {
+    position: relative;
+    z-index: 10 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Restaurant Image */
+.restaurant-image {
+    width: 100%;
+    height: 280px;
+    overflow: hidden;
+    position: relative;
+    background: var(--purple-gradient);
+}
+
+.restaurant-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.restaurant-card:hover .restaurant-image img {
+    transform: scale(1.1);
+}
+
+/* ============================================
+   RESTAURANT PLACEHOLDER - FIXED
+   ============================================ */
+
+.restaurant-image-placeholder {
+    width: 100%;
+    height: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Category Gradients */
+.restaurant-image-placeholder.category-restaurant {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.restaurant-image-placeholder.category-cafe {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.restaurant-image-placeholder.category-street_food {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.restaurant-image-placeholder.category-bar {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.restaurant-image-placeholder.category-bakery {
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+}
+
+/* Default fallback */
+.restaurant-image-placeholder:not([class*="category-"]) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Decorative circles */
+.restaurant-image-placeholder::before {
+    content: '';
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    top: -50px;
+    right: -50px;
+    animation: pulse 4s ease-in-out infinite;
+}
+
+.restaurant-image-placeholder::after {
+    content: '';
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+    bottom: -30px;
+    left: -30px;
+    animation: pulse 4s ease-in-out infinite reverse;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* Icon */
+.placeholder-icon {
+    font-size: 80px;
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Text */
+.placeholder-text {
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+    margin-top: 12px;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    padding: 0 20px;
+    max-width: 80%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Float Animation */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+/* Hover effect */
+.restaurant-card:hover .placeholder-icon {
+    transform: scale(1.15);
+    transition: transform 0.3s ease;
+}
+
+
+/* Restaurant Info */
+.restaurant-info {
+    padding: 24px;
+}
+
+.restaurant-name {
+    margin: 0 0 12px 0;
+    font-size: 22px;
+    color: #333;
+    font-weight: bold;
+}
+
+.restaurant-cuisine {
+    margin-bottom: 12px;
+}
+
+.restaurant-price {
+    margin: 8px 0;
+    color: #666;
+    font-size: 15px;
+}
+
+.restaurant-address {
+    margin: 8px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.restaurant-discount-container {
+    margin: 16px 0;
+}
+
+/* ============================================
+   BADGES
+   ============================================ */
+.photo-badge {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+}
+
+.rating-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.discount-badge {
+    display: inline-block;
+    background: var(--red-gradient);
+    color: white;
+    font-weight: bold;
+    font-size: 24px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+    animation: pulse-discount 2s ease-in-out infinite;
+}
+
+@keyframes pulse-discount {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+    }
+}
+
+/* ============================================
+   TAGS
+   ============================================ */
+.cuisine-tag {
+    display: inline-block;
+    background: #f3f4f6;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: #4b5563;
+    margin-right: 6px;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+/* Admin Cuisine Tag Selector */
+.cuisine-tag-selector {
+    transition: all 0.2s ease;
+}
+
+.cuisine-tag-selector input:checked + label {
+    background: var(--purple-gradient);
+    color: white;
+    border-color: #667eea;
+    transform: scale(1.05);
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.book-button {
+    width: 100%;
+    padding: 14px;
+    background: var(--purple-gradient);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: all 0.3s;
+    text-align: center;
+    display: block;
+    text-decoration: none;
+}
+
+.book-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #ec4899, #db2777);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(236, 72, 153, 0.5);
+}
+
+.btn-success {
+    background: var(--green-gradient);
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+}
+
+/* ============================================
+   TIME SLOTS - UNIFIED BLUE DESIGN
+   ============================================ */
+
+/* Slot Button Base */
+.slot-btn {
+    padding: 14px 10px;
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 80px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Slot Button - FREE (Pastel Light Pink) */
+.slot-btn.slot-free {
+    background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+    color: #831843;
+    border-color: #f472b6;
+    box-shadow: 0 2px 8px rgba(236, 72, 153, 0.15);
+}
+
+.slot-btn.slot-free:hover {
+    background: linear-gradient(135deg, #fbcfe8 0%, #f472b6 100%);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(236, 72, 153, 0.3);
+    border-color: #ec4899;
+}
+
+.slot-btn.slot-free::before {
+    content: '✓';
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-size: 12px;
+    color: #10b981;
+    font-weight: 700;
+}
+
+/* Slot Button - BUSY (Bright Pink) */
+.slot-btn.slot-busy {
+    background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+    color: #ffffff;
+    border-color: #be185d;
+    box-shadow: 0 2px 8px rgba(236, 72, 153, 0.25);
+}
+
+.slot-btn.slot-busy:hover {
+    background: linear-gradient(135deg, #db2777 0%, #be185d 100%);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(236, 72, 153, 0.4);
+    border-color: #9d174d;
+}
+
+.slot-btn.slot-busy::before {
+    content: '⚠';
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-size: 12px;
+    color: #f59e0b;
+}
+
+/* Slot Button - FULL (Gray) */
+.slot-btn.slot-full {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    color: #6b7280;
+    border-color: #d1d5db;
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.slot-btn.slot-full:hover {
+    transform: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.slot-btn.slot-full::before {
+    content: '✕';
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-size: 12px;
+    color: #ef4444;
+    font-weight: 700;
+}
+
+/* Slot Button - SELECTED */
+.slot-btn.selected {
+    background: var(--blue-gradient);
+    color: white;
+    border-color: var(--primary-dark);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 8px 20px rgba(59, 130, 246, 0.3);
+    transform: scale(1.08);
+}
+
+.slot-btn.selected::after {
+    content: '✓';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--secondary-color);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Slot Time Display */
+.slot-btn > div:first-child {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.slot-btn > div:last-child {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* ============================================
+   MODAL STYLES
+   ============================================ */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 30px auto;
+    padding: 40px;
+    border-radius: 16px;
+    max-width: 900px;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal .close {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.modal .close:hover {
+    color: #333;
+}
+
+.modal.show {
+    display: flex !important;
+}
+
+/* ============================================
+   DRAG & DROP ZONE
+   ============================================ */
+.drop-zone {
+    border: 3px dashed #ccc;
+    border-radius: 16px;
+    padding: 20px 40px;
+    min-height: 100px;
+    max-height: 150px;  /* ← ДОБАВИТЬ */
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);
+    overflow-y: auto;  /* ← ДОБАВИТЬ */
+}
+
+
+.drop-zone:hover {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8efff 100%);
+    transform: scale(1.01);
+}
+
+.drop-zone.drag-over {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #e8efff 0%, #d4e3ff 100%);
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+/* Compact Drop Zone (для формы добавления) */
+.drop-zone-compact {
+    padding: 20px;
+    min-height: auto;
+}
+
+.drop-zone-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.drop-zone-icon {
+    font-size: 24px;
+}
+
+.drop-zone-text {
+    color: #666;
+    font-size: 14px;
+}
+
+.drop-zone-hint {
+    color: #999;
+    font-size: 12px;
+}
+
+/* ============================================
+   PHOTO GRID
+   ============================================ */
+.photo-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 8px;
+    height: 80px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 32px;
+}
+
+.photo-grid-item {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.photo-grid-item:hover {
+    transform: scale(1.02);
+}
+
+.photo-grid-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-main {
+    grid-row: 1 / 3;
+    grid-column: 1;
+}
+
+.photo-more {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.photo-item {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s;
+    aspect-ratio: 4/3;
+}
+
+.photo-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.photo-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 10px;
+}
+
+.photo-item:hover .photo-overlay {
+    opacity: 1;
+}
+
+.photo-delete {
+    background: rgba(255, 59, 48, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.photo-delete:hover {
+    background: rgb(255, 59, 48);
+    transform: scale(1.1);
+}
+
+.photo-number {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* ============================================
+   UPLOAD PROGRESS
+   ============================================ */
+.upload-progress-bar {
+    background: #e0e0e0;
+    border-radius: 12px;
+    height: 40px;
+    margin: 15px 0;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.upload-progress-fill {
+    background: var(--purple-gradient);
+    height: 100%;
+    transition: width 0.4s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: #999;
+}
+
+.empty-state-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+.empty-state-title {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.empty-state-text {
+    font-size: 16px;
+    color: #999;
+}
+
+/* ============================================
+   STICKY HEADER
+   ============================================ */
+.sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.sticky-header.scrolled {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+/* ============================================
+   CATEGORY TABS
+   ============================================ */
+.category-tab {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.category-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 4px;
+    background: var(--primary-color);
+    border-radius: 2px;
+}
+
+/* ============================================
+   FORMS
+   ============================================ */
+select, input[type="text"], input[type="tel"], input[type="date"], 
+input[type="time"], input[type="number"], input[type="email"], textarea {
+    transition: all 0.3s ease;
+}
+
+select:focus, input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ============================================
+   ALERTS
+   ============================================ */
+.alert-success {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    border-left: 4px solid var(--secondary-color);
+    animation: slideInRight 0.5s ease-out;
+}
+
+.alert-error {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    border-left: 4px solid var(--danger-color);
+    animation: slideInRight 0.5s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Skeleton Loading */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+.cursor-pointer {
+    cursor: pointer !important;
+}
+
+.no-select {
+    user-select: none;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+    .logo {
+        font-size: 1.5rem;
+    }
+    
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 22px;
+    }
+    
+    .restaurant-card:hover {
+        transform: translateY(-4px) scale(1.01);
+    }
+    
+    .modal-content {
+        margin: 20px;
+        padding: 20px;
+        max-width: 100%;
+    }
+    
+    .drop-zone {
+        padding: 40px 20px;
+    }
+    
+    .photo-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 200px 100px 100px;
+        height: auto;
+    }
+
+    .photo-main {
+        grid-row: 1;
+        grid-column: 1 / 3;
+    }
+    
+    .photo-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 15px;
+    }
+    
+    .photo-item {
+        aspect-ratio: 1/1;
+    }
+
+    .slot-btn {
+        min-height: 70px;
+        padding: 12px 8px;
+    }
+}
+
+/* ============================================
+   SMOOTH TRANSITIONS
+   ============================================ */
+a, button, select, input {
+    transition: all 0.3s ease;
+}
+
+a.block:hover, button:hover {
+    text-decoration: none;
+}
+
+/* ============================================
+   DASHBOARD STYLES
+   ============================================ */
+
+/* Status Select Dropdown */
+.status-select {
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 0;
+    font-weight: 600;
+}
+
+.status-select[data-status="confirmed"] {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-select[data-status="cancelled"] {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.status-select[data-status="completed"] {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.status-select[data-status="no_show"] {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+/* Statistics Cards */
+.stat-card {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    transition: transform 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+}
+
+.stat-card-blue {
+    border-left: 4px solid #3b82f6;
+}
+
+.stat-card-green {
+    border-left: 4px solid #10b981;
+}
+
+.stat-card-purple {
+    border-left: 4px solid #8b5cf6;
+}
+
+.stat-card-orange {
+    border-left: 4px solid #f97316;
+}
+
+/* Booking Row */
+.booking-row {
+    transition: background-color 0.2s;
+}
+
+.booking-row:hover {
+    background-color: #f9fafb;
+}
+
+/* Modal */
+.details-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 50;
+    align-items: center;
+    justify-content: center;
+}
+
+.details-modal.active {
+    display: flex;
+}
+
+.details-modal-content {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+    max-width: 42rem;
+    width: 100%;
+    margin: 1rem;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+    font-weight: 600;
+    z-index: 50;
+    animation: slideInRight 0.3s ease-out;
+}
+
+.toast-success {
+    background-color: #10b981;
+}
+
+.toast-error {
+    background-color: #ef4444;
+}
+
+/* ============================================
+   RESTAURANT PAGE STYLES
+   ============================================ */
+
+/* Lightbox */
+.lightbox {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.lightbox.active {
+    display: flex;
+}
+
+.lightbox img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    font-size: 28px;
+    cursor: pointer;
+    transition: all 0.3s;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lightbox-close:hover {
+    background: rgba(255,255,255,0.25);
+    transform: rotate(90deg);
+}
+
+.lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.15);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lightbox-nav:hover {
+    background: rgba(255,255,255,0.25);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.lightbox-nav.prev {
+    left: 30px;
+}
+
+.lightbox-nav.next {
+    right: 30px;
+}
+
+/* Breadcrumbs */
+.breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 16px;
+}
+
+.breadcrumbs a {
+    color: #3b82f6;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumbs a:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+.breadcrumbs-separator {
+    color: #d1d5db;
+}
+
+/* Restaurant Header Actions */
+.restaurant-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    color: #374151;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.action-btn.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+}
+
+/* Time Slots - Old Style (kept for compatibility) */
+.timeslot {
+    transition: all 0.2s ease;
+    border: 2px solid #e5e7eb;
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.timeslot:hover {
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.timeslot.selected {
+    border-color: #3b82f6;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.timeslot-time {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 4px;
+}
+
+.timeslot-discount {
+    font-size: 14px;
+    font-weight: 700;
+    color: #10b981;
+}
+
+/* Success Animation */
+.success-message {
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Rating Badge - Updated to match main site */
+.rating-badge-restaurant {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+/* Info Badge */
+.info-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #f3f4f6;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #374151;
+}
+
+/* Sticky Booking Button (Mobile) */
+.sticky-booking-btn {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 16px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+    z-index: 100;
+    display: none;
+}
+
+/* Tabs Navigation */
+.tabs-nav {
+    display: flex;
+    gap: 32px;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 24px;
+}
+
+.tab-link {
+    padding: 12px 0;
+    border-bottom: 2px solid transparent;
+    font-weight: 600;
+    color: #6b7280;
+    text-decoration: none;
+    transition: all 0.2s;
+    margin-bottom: -2px;
+}
+
+.tab-link:hover {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+.tab-link.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+/* Booking Summary Card */
+.booking-summary {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    position: sticky;
+    top: 96px;
+}
+
+.summary-section {
+    padding: 16px 0;
+    border-top: 1px solid #e5e7eb;
+}
+
+.summary-section:first-child {
+    border-top: none;
+    padding-top: 0;
+}
+
+/* Important Info List */
+.info-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.info-list li {
+    padding: 8px 0;
+    color: #6b7280;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-list li::before {
+    content: '✓';
+    color: #10b981;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+/* ============================================
+   RESPONSIVE - Restaurant Page
+   ============================================ */
+@media (max-width: 768px) {
+    .photo-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 200px 100px 100px;
+        height: auto;
+    }
+
+    .photo-main {
+        grid-row: 1;
+        grid-column: 1 / 3;
+    }
+
+    .sticky-booking-btn {
+        display: block;
+    }
+
+    .tabs-nav {
+        gap: 16px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .restaurant-actions {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 640px) {
+    .lightbox-nav {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    .lightbox-nav.prev {
+        left: 10px;
+    }
+
+    .lightbox-nav.next {
+        right: 10px;
+    }
+
+    .lightbox-close {
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
+    }
+
+    .slot-btn {
+        min-height: 60px;
+        font-size: 14px;
+    }
+}
