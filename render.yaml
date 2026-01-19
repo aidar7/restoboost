@@ -1,0 +1,15 @@
+﻿services:
+  - type: web
+    name: restoboost-api
+    env: python
+    plan: free
+    runtime: python-3.11
+    buildCommand: pip install -r app/requirements.txt
+    startCommand: cd app && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        scope: all
+      - key: SUPABASE_URL
+        scope: all
+      - key: SUPABASE_KEY
+        scope: all
