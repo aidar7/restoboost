@@ -24,7 +24,7 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 # ============================================
 # ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
 # ============================================
-
+ 
 app = FastAPI(
     title="RestoBoost API",
     description="Restaurant booking platform with dynamic discounts",
