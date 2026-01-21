@@ -32,7 +32,7 @@ async def index(
     
     # Get all active restaurants (include_deleted=False по умолчанию)
     restaurants = await restaurant_service.get_all(
-        category=category if category != "all" else None,
+        # category=category if category != "all" else None,
         limit=50
     )
     
