@@ -23,7 +23,7 @@ app = FastAPI(
 )
 
 
-# main.py - обнови CORS
+# CORS для Next.js фронтенда
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -31,15 +31,12 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
-        settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL' ) else "http://localhost:3000"
+        settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else "http://localhost:3000"
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
- )
-
-
-
+)
 
 
 # Статические файлы
@@ -54,6 +51,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(restaurants.router, prefix="/api/restaurants", tags=["Restaurants"])
 app.include_router(bookings_router, prefix="/api/bookings")
 app.include_router(photos.router, prefix="/api", tags=["Photos"])
+
 
 # ============================================
 # СЛУЖЕБНЫЕ ENDPOINTS
@@ -165,10 +163,9 @@ if __name__ == "__main__":
     ║   🗄️  Supabase: {'✅ Connected' if settings.SUPABASE_URL else '❌ Not configured'}            ║
     ╚═══════════════════════════════════════════╝
     
-    📖 Docs: http://127.0.0.1:8000/docs
-    🏠 Home: http://127.0.0.1:8000/
-    👨‍💼 Admin: http://127.0.0.1:8000/admin
-    📊 Dashboard: http://127.0.0.1:8000/admin/dashboard
+    📖 API Docs: http://127.0.0.1:8000/docs
+    🏥 Health: http://127.0.0.1:8000/health
+    🍽️  Restaurants: http://127.0.0.1:8000/api/restaurants
     """)
     
     uvicorn.run(
