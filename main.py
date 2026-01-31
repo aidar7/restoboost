@@ -4,22 +4,12 @@ RestoBoost - Restaurant booking platform with dynamic discounts
 """
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 
 from app.core.config import settings
 from app.api import restaurants, bookings, photos
-from app.web import pages, admin
 from app.api.bookings import router as bookings_router
-
-# ============================================
-# TEMPLATES CONFIGURATION
-# ============================================
-
-BASE_DIR = Path(__file__).resolve().parent
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-
 
 # ============================================
 # ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
@@ -64,12 +54,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(restaurants.router, prefix="/api/restaurants", tags=["Restaurants"])
 app.include_router(bookings_router, prefix="/api/bookings")
 app.include_router(photos.router, prefix="/api", tags=["Photos"])
-
-
-# Web pages
-app.include_router(pages.router, tags=["Pages"])
-app.include_router(admin.router, prefix="/admin", tags=["Admin"])
-
 
 # ============================================
 # СЛУЖЕБНЫЕ ENDPOINTS
