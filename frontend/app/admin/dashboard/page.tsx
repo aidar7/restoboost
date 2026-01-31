@@ -544,7 +544,7 @@ const fetchCompletedBookings = async () => {
                         />
                         <ChartTooltip
                             cursor={false}
-                            content={<ChartTooltipContent indicator="dot" />}
+                            content={(props: any) => <ChartTooltipContent {...props} indicator="dot" />}
                         />
                         <Area
                             dataKey="guests"
@@ -603,7 +603,7 @@ const fetchCompletedBookings = async () => {
                         <XAxis type="number" hide />
                         <ChartTooltip
                             cursor={false}
-                            content={<ChartTooltipContent hideLabel />}
+                            content={(props: any) => <ChartTooltipContent {...props} hideLabel />}
                         />
                         <Bar 
                             dataKey="bookings" 
