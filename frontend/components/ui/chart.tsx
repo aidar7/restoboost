@@ -96,7 +96,7 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
-export type ChartTooltipContentProps = TooltipContentProps<ValueType, NameType> &
+type ChartTooltipContentProps = TooltipContentProps<ValueType, NameType> &
   React.ComponentProps<"div"> & {
     hideLabel?: boolean
     hideIndicator?: boolean
