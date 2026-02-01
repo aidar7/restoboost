@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Copy, Download, Share2, Home, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import QRCode from 'qrcode';
-import { Breadcrumbs } from '@/components/breadcrumbs'; 
 
 interface BookingDetails {
   id: number;
@@ -24,16 +24,19 @@ interface BookingDetails {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-export default function BookingConfirmation() {
+// ✅ Отдельный компонент с useSearchParams
+function BookingConfirmationContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const bookingId = searchParams.get('booking_id');
   const confirmationCode = searchParams.get('code');
   
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>(''); // ← ДОБАВЬ
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+
+  // ... весь твой код useEffect, функции copyToClipboard и т.д. ...
+  // (КОПИРУЙ ВСЁ ИЗ СТАРОГО КОМПОНЕНТА СЮДА)
 
   useEffect(() => {
     if (!bookingId || !confirmationCode) {
@@ -58,31 +61,26 @@ export default function BookingConfirmation() {
     fetchBooking();
   }, [bookingId, confirmationCode]);
 
-  // ← ДОБАВЬ генерацию QR кода
   useEffect(() => {
-  if (confirmationCode) {
-    const qrData = JSON.stringify({
-      code: confirmationCode,
-      bookingId: bookingId,
-      type: 'restoboost_booking'
-    });
+    if (confirmationCode) {
+      const qrData = JSON.stringify({
+        code: confirmationCode,
+        bookingId: bookingId,
+        type: 'restoboost_booking'
+      });
 
-    QRCode.toDataURL(qrData, {
-      width: 256,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      },
-      errorCorrectionLevel: 'H'
-    }).then((url: string) => {  // ← Добавь тип
-      setQrCodeUrl(url);
-    }).catch((err: Error) => {  // ← Добавь тип
-      console.error('QR Code generation failed:', err);
-    });
-  }
-}, [confirmationCode, bookingId]);
-
+      QRCode.toDataURL(qrData, {
+        width: 256,
+        margin: 2,
+        color: { dark: '#000000', light: '#FFFFFF' },
+        errorCorrectionLevel: 'H'
+      }).then((url: string) => {
+        setQrCodeUrl(url);
+      }).catch((err: Error) => {
+        console.error('QR Code generation failed:', err);
+      });
+    }
+  }, [confirmationCode, bookingId]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(confirmationCode || '');
@@ -140,7 +138,7 @@ export default function BookingConfirmation() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-gray-50">
-      {/* Header */}
+      {/* ВСЯ ТВОЯ РАЗМЕТКА - ОСТАВЬ КАК ЕСТЬ */}
       <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">Подтверждение брони</h1>
@@ -153,9 +151,7 @@ export default function BookingConfirmation() {
         </div>
       </div>
 
-      {/* Main Content */}
       <main className="max-w-2xl mx-auto px-4 py-8">
-        
         {/* Success Message */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
@@ -190,7 +186,7 @@ export default function BookingConfirmation() {
           </button>
         </Card>
 
-        {/* QR Code Section - ОБНОВЛЁННАЯ */}
+        {/* QR Code Section */}
         <Card className="bg-white p-6 mb-8 text-center">
           <h3 className="text-lg font-bold text-gray-900 mb-2">QR код для подтверждения</h3>
           <p className="text-sm text-gray-600 mb-4">
@@ -224,7 +220,6 @@ export default function BookingConfirmation() {
             </p>
           </div>
 
-          {/* Download QR Button */}
           {qrCodeUrl && (
             <Button
               onClick={downloadQR}
@@ -242,7 +237,6 @@ export default function BookingConfirmation() {
           <h3 className="text-lg font-bold text-gray-900 mb-6">Детали брони</h3>
           
           <div className="space-y-4">
-            {/* Restaurant */}
             <div className="flex items-start justify-between pb-4 border-b border-gray-200">
               <div>
                 <p className="text-sm text-gray-600 font-semibold">РЕСТОРАН</p>
@@ -253,7 +247,6 @@ export default function BookingConfirmation() {
               <Badge className="bg-green-100 text-green-800">✓ Подтверждено</Badge>
             </div>
 
-            {/* Date & Time */}
             <div className="flex items-start justify-between pb-4 border-b border-gray-200">
               <div>
                 <p className="text-sm text-gray-600 font-semibold">ДАТА И ВРЕМЯ</p>
@@ -273,7 +266,6 @@ export default function BookingConfirmation() {
               </div>
             </div>
 
-            {/* Party Size */}
             <div className="flex items-start justify-between pb-4 border-b border-gray-200">
               <div>
                 <p className="text-sm text-gray-600 font-semibold">КОЛИЧЕСТВО ГОСТЕЙ</p>
@@ -283,7 +275,6 @@ export default function BookingConfirmation() {
               </div>
             </div>
 
-            {/* Guest Name */}
             <div className="flex items-start justify-between pb-4 border-b border-gray-200">
               <div>
                 <p className="text-sm text-gray-600 font-semibold">ИМЯ ГОСТЯ</p>
@@ -293,7 +284,6 @@ export default function BookingConfirmation() {
               </div>
             </div>
 
-            {/* Phone */}
             <div className="flex items-start justify-between pb-4 border-b border-gray-200">
               <div>
                 <p className="text-sm text-gray-600 font-semibold">ТЕЛЕФОН</p>
@@ -303,7 +293,6 @@ export default function BookingConfirmation() {
               </div>
             </div>
 
-            {/* Discount */}
             {(booking?.discount_applied || 20) > 0 && (
               <div className="flex items-start justify-between bg-orange-50 p-4 rounded-lg">
                 <div>
@@ -320,7 +309,6 @@ export default function BookingConfirmation() {
           </div>
         </Card>
 
-        {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <Button
             onClick={handleShare}
@@ -332,7 +320,6 @@ export default function BookingConfirmation() {
           </Button>
         </div>
 
-        {/* Navigation Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link href="/my-bookings" className="block">
             <Button className="w-full h-12 text-base bg-teal-700 hover:bg-teal-800">
@@ -346,7 +333,6 @@ export default function BookingConfirmation() {
           </Link>
         </div>
 
-        {/* Footer Info */}
         <div className="mt-12 p-6 bg-blue-50 border border-blue-200 rounded-lg text-center">
           <p className="text-sm text-gray-700 mb-2">
             ℹ️ <strong>Важно:</strong> Пожалуйста, приходите за 10-15 минут до забронированного времени
@@ -357,5 +343,21 @@ export default function BookingConfirmation() {
         </div>
       </main>
     </div>
+  );
+}
+
+// ✅ Экспортируемая обёртка с Suspense
+export default function BookingConfirmation() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-700 mx-auto mb-4"></div>
+          <p className="text-gray-600">Загрузка...</p>
+        </div>
+      </div>
+    }>
+      <BookingConfirmationContent />
+    </Suspense>
   );
 }
