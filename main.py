@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+from fastapi.middleware.cors import CORSMiddleware
+from app.services.auth_service import app as auth_app
 
 from app.core.config import settings
 from app.api import restaurants, bookings, photos
@@ -147,7 +149,8 @@ async def shutdown_event():
     """Application shutdown event"""
     print("\n👋 RestoBoost shutting down...")
 
-
+# В конце файла, перед if __name__ == "__main__":
+app.include_router(auth_app.router)
 # ============================================
 # ЗАПУСК ПРИЛОЖЕНИЯ
 # ============================================
