@@ -2,12 +2,12 @@
 Main application entry point
 RestoBoost - Restaurant booking platform with dynamic discounts
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
-from fastapi.middleware.cors import CORSMiddleware
-from app.services.auth_service import app as auth_app
+from pydantic import BaseModel, EmailStr
+from typing import Optional
 
 from app.core.config import settings
 from app.api import restaurants, bookings, photos
@@ -47,6 +47,24 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 # ============================================
+# MODELS
+# ============================================
+
+class RegisterRequest(BaseModel):
+    """Модель для регистрации"""
+    email: EmailStr
+    password: str
+    full_name: str
+    phone: str
+    role: str = "customer"  # customer, restaurant_owner, admin
+
+class LoginRequest(BaseModel):
+    """Модель для логина"""
+    email: EmailStr
+    password: str
+
+
+# ============================================
 # ПОДКЛЮЧЕНИЕ РОУТОВ
 # ============================================
 
@@ -54,6 +72,88 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(restaurants.router, prefix="/api/restaurants", tags=["Restaurants"])
 app.include_router(bookings_router, prefix="/api/bookings")
 app.include_router(photos.router, prefix="/api", tags=["Photos"])
+
+
+# ============================================
+# AUTH ENDPOINTS
+# ============================================
+
+@app.post("/api/auth/register", response_model=dict)
+async def register(request: RegisterRequest):
+    """
+    Регистрация нового пользователя
+    
+    - **email**: Email адрес
+    - **password**: Пароль (минимум 6 символов)
+    - **full_name**: Полное имя
+    - **phone**: Номер телефона
+    - **role**: Роль (customer, restaurant_owner, admin)
+    """
+    try:
+        from app.services.auth_service import auth_service
+        
+        result = await auth_service.register(
+            email=request.email,
+            password=request.password,
+            full_name=request.full_name,
+            phone=request.phone,
+            role=request.role
+        )
+        return result
+    except Exception as e:
+        return {"error": str(e)}, 400
+
+
+@app.post("/api/auth/login", response_model=dict)
+async def login(request: LoginRequest):
+    """
+    Логин пользователя
+    
+    - **email**: Email адрес
+    - **password**: Пароль
+    
+    Возвращает JWT токен
+    """
+    try:
+        from app.services.auth_service import auth_service
+        
+        result = await auth_service.login(
+            email=request.email,
+            password=request.password
+        )
+        return result
+    except Exception as e:
+        return {"error": str(e)}, 401
+
+
+@app.get("/api/auth/user", response_model=dict)
+async def get_current_user(authorization: Optional[str] = Header(None)):
+    """
+    Получить текущего пользователя
+    
+    Требуется JWT токен в заголовке Authorization: Bearer <token>
+    """
+    try:
+        from app.services.auth_service import auth_service
+        
+        if not authorization:
+            return {"error": "Authorization header required"}, 401
+        
+        # Извлекаем токен из "Bearer <token>"
+        token = authorization.replace("Bearer ", "")
+        
+        result = await auth_service.verify_token(token)
+        return result
+    except Exception as e:
+        return {"error": str(e)}, 401
+
+
+@app.post("/api/auth/logout", response_model=dict)
+async def logout():
+    """
+    Логаут пользователя (просто удалить токен на фронтенде)
+    """
+    return {"message": "Logged out successfully"}
 
 
 # ============================================
@@ -149,8 +249,7 @@ async def shutdown_event():
     """Application shutdown event"""
     print("\n👋 RestoBoost shutting down...")
 
-# В конце файла, перед if __name__ == "__main__":
-app.include_router(auth_app.router)
+
 # ============================================
 # ЗАПУСК ПРИЛОЖЕНИЯ
 # ============================================
