@@ -160,6 +160,17 @@ async def logout():
 # СЛУЖЕБНЫЕ ENDPOINTS
 # ============================================
 
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {
+        "message": "Welcome to RestoBoost API",
+        "version": "2.0.0",
+        "docs": "/docs",
+        "health": "/health"
+    }
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
@@ -273,7 +284,7 @@ if __name__ == "__main__":
     
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
-        port=8000,
+        host=settings.HOST,
+        port=settings.PORT,
         reload=settings.DEBUG
     )
