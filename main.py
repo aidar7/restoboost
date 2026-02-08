@@ -5,6 +5,7 @@ RestoBoost - Restaurant booking platform with dynamic discounts
 from fastapi import FastAPI, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pathlib import Path
 from pydantic import BaseModel, EmailStr
 from typing import Optional
@@ -101,7 +102,7 @@ async def register(request: RegisterRequest):
         )
         return result
     except Exception as e:
-        return {"error": str(e)}, 400
+        return JSONResponse(status_code=400, content={"error": str(e)})
 
 
 @app.post("/api/auth/login", response_model=dict)
@@ -123,7 +124,7 @@ async def login(request: LoginRequest):
         )
         return result
     except Exception as e:
-        return {"error": str(e)}, 401
+        return JSONResponse(status_code=401, content={"error": str(e)})
 
 
 @app.get("/api/auth/user", response_model=dict)
@@ -137,7 +138,7 @@ async def get_current_user(authorization: Optional[str] = Header(None)):
         from app.services.auth_service import auth_service
         
         if not authorization:
-            return {"error": "Authorization header required"}, 401
+            return JSONResponse(status_code=401, content={"error": "Authorization header required"})
         
         # Извлекаем токен из "Bearer <token>"
         token = authorization.replace("Bearer ", "")
@@ -145,7 +146,7 @@ async def get_current_user(authorization: Optional[str] = Header(None)):
         result = await auth_service.verify_token(token)
         return result
     except Exception as e:
-        return {"error": str(e)}, 401
+        return JSONResponse(status_code=401, content={"error": str(e)})
 
 
 @app.post("/api/auth/logout", response_model=dict)
