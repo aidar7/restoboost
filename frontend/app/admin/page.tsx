@@ -16,6 +16,7 @@ type Restaurant = {
   address: string | null;
   phone: string | null;
   discount?: number | null;
+  photos?: string[];
 };
 
 export default function AdminPage() {
@@ -511,6 +512,17 @@ export default function AdminPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">{r.name}</span>
+                      {r.photos && r.photos.length > 0 ? (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-medium">
+                        📷 Есть фото ({r.photos.length})
+                      </span>
+                    ) : (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-medium">
+                        📷 Нет фото
+                      </span>
+                    )}
+
+
                       <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
                         {r.category}
                       </span>
@@ -531,12 +543,11 @@ export default function AdminPage() {
                         💰 {r.avg_check} ₸
                       </span>
                     )}
-                    <button
-  className="text-xs px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200"
-  onClick={() => router.push(`/admin/restaurants/${r.id}`)}
->
-  Редактировать
-</button>
+                    <button className="text-xs px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200"
+                      onClick={() => router.push(`/admin/restaurants/${r.id}`)}
+                        >
+                          Редактировать
+                        </button>
                     <button
                       className="text-xs px-3 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200"
                       onClick={() => handleDelete(r.id)}
