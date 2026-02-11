@@ -82,7 +82,27 @@ export default function AdminRestaurantEditPage() {
     description: 'на все меню',
   });
   const [serviceId, setServiceId] = useState('');
+  // --- ↓ ЗАМЕНИТЕ ВСЕ СТАРЫЕ useState ДЛЯ ФОТО НА ЭТИ ↓ ---
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([]); // URL уже загруженных фото
+  const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);     // Новые файлы для загрузки
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);    // Превью для новых файлов
+  const [photosToDelete, setPhotosToDelete] = useState<string[]>([]); // URL старых фото для удаления
+// --- ↑ КОНЕЦ ЗАМЕНЫ ↑ ---
 
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.currentTarget.files || []);
+    if (files.length === 0) return;
+
+    // Добавляем новые файлы к уже выбранным
+    setSelectedPhotos(prev => [...prev, ...files]);
+
+    // Создаем и добавляем новые превью
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setPhotoPreviews(prev => [...prev, ...newPreviews]);
+
+    // Очищаем инпут, чтобы можно было выбрать те же файлы снова
+    e.currentTarget.value = '';
+  };
 
 
   useEffect(() => {
@@ -105,6 +125,7 @@ export default function AdminRestaurantEditPage() {
       
       setRestaurant(data);
       setOriginalData(data);
+      setExistingPhotos(data.photos || []);
       console.log('✅ Restaurant set:', data.name);
     } catch (e) {
       console.error('❌ ОШИБКА:', e);
@@ -147,103 +168,59 @@ export default function AdminRestaurantEditPage() {
     loadDiscounts();
   }, [restaurantId]);
 
-  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!restaurant) return;
+  // === ↓↓↓ ПОЛНОСТЬЮ ЗАМЕНИТЕ СТАРУЮ ФУНКЦИЮ handleSave НА ЭТУ ↓↓↓ ===
 
-    const form = e.currentTarget;
-    const fd = new FormData(form);
+    const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!restaurant) return;
 
-    // 1) JSON для ресторана
-    const restaurantPayload: any = {
-      name: String(fd.get('name') || '').trim(),
-      category: String(fd.get('category') || ''),
-      rating: Number(fd.get('rating') || 0),
-      avg_check: Number(fd.get('avg_check') || 0),
-      address: String(fd.get('address') || '').trim(),
-      phone: String(fd.get('phone') || '').trim(),
-      description: String(fd.get('description') || ''),
-      cuisine: fd.getAll('cuisine') as string[],
-    };
-
-    // 2) FormData для timeslot
-    const timeslotFd = new FormData();
-    timeslotFd.append('discount', String(fd.get('discount') || '0'));
-    timeslotFd.append('time_start', String(fd.get('time_start') || '15:00'));
-    timeslotFd.append('time_end', String(fd.get('time_end') || '22:00'));
-    timeslotFd.append('valid_from', String(fd.get('valid_from') || ''));
-    timeslotFd.append('valid_to', String(fd.get('valid_to') || ''));
-    timeslotFd.append('max_tables', String(fd.get('max_tables') || '4'));
-
-    try {
       setSaving(true);
 
-      // 1. Обновляем ресторан
-      const res1 = await fetch(`${API_BASE}/restaurants/${restaurantId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(restaurantPayload),
+      // Создаем FormData из формы
+      const formData = new FormData(e.currentTarget);
+
+      // Удаляем поле 'cuisine', так как мы его обработаем вручную
+      formData.delete('cuisine');
+      // Собираем значения из чекбоксов и добавляем как JSON-строку
+      const cuisines = Array.from(e.currentTarget.querySelectorAll('input[name="cuisine"]:checked'))
+                            .map(el => (el as HTMLInputElement).value);
+      formData.append('cuisine', JSON.stringify(cuisines));
+
+      // Добавляем новые выбранные файлы
+      selectedPhotos.forEach((photo) => {
+        formData.append('photos', photo);
       });
 
-      if (!res1.ok) {
-        const err = await res1.json().catch(() => null);
-        const errorMsg = `Ошибка сохранения ресторана: ${err?.detail || res1.status}`;
-        setToast({ message: errorMsg, type: 'error' });
-        return;
-      }
+      // Добавляем список URL старых фото для удаления
+      formData.append('photos_to_delete', JSON.stringify(photosToDelete));
 
-      // 2. Обновляем/создаём дефолтный timeslot
-      const res2 = await fetch(`${API_BASE}/restaurants/${restaurantId}/timeslot`, {
-        method: 'PUT',
-        body: timeslotFd,
-      });
+      try {
+        const res = await fetch(`${API_BASE}/restaurants/${restaurantId}`, {
+          method: 'PUT',
+          body: formData, // Отправляем FormData
+        });
 
-      if (!res2.ok) {
-        const err = await res2.json().catch(() => null);
-        const errorMsg = `Ошибка сохранения акции: ${err?.detail || res2.status}`;
-        setToast({ message: errorMsg, type: 'error' });
-        return;
-      }
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ detail: 'Ошибка сервера' }));
+          throw new Error(err.detail || 'Не удалось обновить ресторан');
+        }
 
-      // Успешно сохранено
-      const changes: string[] = [];
-      
-      if (restaurantPayload.name !== originalData?.name) {
-        changes.push(`Название: "${restaurantPayload.name}"`);
-      }
-      if (restaurantPayload.rating !== originalData?.rating) {
-        changes.push(`Рейтинг: ${restaurantPayload.rating}`);
-      }
-      if (restaurantPayload.avg_check !== originalData?.avg_check) {
-        changes.push(`Средний чек: ${restaurantPayload.avg_check}₸`);
-      }
-      if (fd.get('discount') !== String(originalData?.timeslots?.[0]?.discount || 0)) {
-        changes.push(`Скидка: ${fd.get('discount')}%`);
-      }
-      if (fd.get('time_start') !== originalData?.timeslots?.[0]?.time_start?.slice(0, 5)) {
-        changes.push(`Время начала: ${fd.get('time_start')}`);
-      }
-      if (fd.get('time_end') !== originalData?.timeslots?.[0]?.time_end?.slice(0, 5)) {
-        changes.push(`Время конца: ${fd.get('time_end')}`);
-      }
+        setToast({ message: '✅ Ресторан успешно обновлен!', type: 'success' });
 
-      const changesText = changes.length > 0 ? `\n${changes.join('\n')}` : '';
-      setToast({ 
-        message: `✨ Ресторан успешно обновлен!${changesText}`, 
-        type: 'success' 
-      });
+        setTimeout(() => {
+          router.push('/admin');
+        }, 2000);
 
-      // Редирект через 2 секунды
-      setTimeout(() => {
-        router.push('/admin');
-      }, 2000);
-    } catch (e) {
-      console.error(e);
-      setToast({ message: 'Ошибка сети при сохранении', type: 'error' });
-    } finally {
-      setSaving(false);
-    }
-  };
+      } catch (e) {
+        console.error(e);
+        setToast({ message: `❌ Ошибка: ${e instanceof Error ? e.message : 'неизвестная ошибка'}`, type: 'error' });
+      } finally {
+        setSaving(false);
+      }
+    };
+
+// === ↑↑↑ КОНЕЦ ЗАМЕНЫ ↑↑↑ ===
+
 
     const handleSaveDiscount = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -516,6 +493,85 @@ export default function AdminRestaurantEditPage() {
                       className="w-full border-2 border-gray-300 rounded-lg p-3 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition outline-none"
                     />
                   </div>
+
+                  {/* === ↓↓↓ ВСТАВЬТЕ ЭТОТ БЛОК КОДА ВМЕСТО СТАРОГО РАЗДЕЛА ФОТО ↓↓↓ === */}
+
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-lg border-2 border-blue-200">
+                    <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <span>📷</span> Фотографии ресторана
+                    </h3>
+
+                    {/* ЗОНА ПРЕДПРОСМОТРА */}
+                    {(existingPhotos.length > 0 || photoPreviews.length > 0) && (
+                      <div className="mb-4">
+                        <p className="text-sm font-semibold text-gray-700 mb-3">
+                          Превью ({existingPhotos.length + selectedPhotos.length} фото)
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          {/* 1. Рендер существующих фото */}
+                          {existingPhotos.map((photoUrl) => (
+                            <div key={photoUrl} className="relative group">
+                              <img
+                                src={photoUrl}
+                                alt="Existing photo"
+                                className="w-full h-24 object-cover rounded-lg border-2 border-gray-400"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setExistingPhotos(existingPhotos.filter(p => p !== photoUrl));
+                                  setPhotosToDelete(prev => [...prev, photoUrl]);
+                                }}
+                                className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                          {/* 2. Рендер превью новых фото */}
+                          {photoPreviews.map((previewUrl, index) => (
+                            <div key={previewUrl} className="relative group">
+                              <img
+                                src={previewUrl}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-24 object-cover rounded-lg border-2 border-blue-400"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  // Удаляем и файл, и его превью
+                                  setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
+                                  setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+                                  // Освобождаем память от превью
+                                  URL.revokeObjectURL(previewUrl);
+                                }}
+                                className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* КНОПКА ЗАГРУЗКИ */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Добавить новые фото
+                      </label>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handlePhotoSelect}
+                        className="w-full border-2 border-dashed border-blue-300 rounded-lg p-4 cursor-pointer hover:border-blue-500 transition"
+                      />
+                    </div>
+                  </div>
+
+                  {/* === ↑↑↑ КОНЕЦ БЛОКА ↑↑↑ === */}
+
 
                   {/* Кухня */}
                   <div>
