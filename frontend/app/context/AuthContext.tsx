@@ -43,41 +43,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Проверить аутентификацию по токену
-  const checkAuth = async (authToken?: string) => {
-    const tokenToUse = authToken || token;
-    
-    if (!tokenToUse) {
-      setIsLoading(false);
-      return;
-    }
+  // В файле app/context/AuthContext.tsx
 
-    try {
-      const response = await fetch(`${API_URL}/api/auth/user`, {
-        headers: {
-          'Authorization': `Bearer ${tokenToUse}`,
-          'Content-Type': 'application/json'
-        }
-      });
+// Проверить аутентификацию по токену
+const checkAuth = async (authToken?: string) => {
+  const tokenToUse = authToken || token;
+  
+  if (!tokenToUse) {
+    setIsLoading(false);
+    return;
+  }
 
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-        setToken(tokenToUse);
-      } else {
-        // Токен невалидный
-        localStorage.removeItem('auth_token');
-        setToken(null);
-        setUser(null);
-      }
-    } catch (error) {
-      console.error('Auth check error:', error);
+  try {
+    // --- ИЗМЕНЕНИЯ ЗДЕСЬ ---
+    const response = await fetch(`${API_URL}/api/auth/verify-token`, {
+      method: 'POST', // 1. Метод теперь POST
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ token: tokenToUse }) // 2. Токен передается в теле запроса
+    });
+
+    if (response.ok) {
+      const userData = await response.json();
+      setUser(userData);
+      setToken(tokenToUse); // Убедимся, что токен остается в состоянии
+    } else {
+      // Токен невалидный
       localStorage.removeItem('auth_token');
       setToken(null);
       setUser(null);
-    } finally {
-      setIsLoading(false);
     }
-  };
+  } catch (error) {
+    console.error('Auth check error:', error);
+    localStorage.removeItem('auth_token');
+    setToken(null);
+    setUser(null);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   // Логин
   const login = async (email: string, password: string) => {
@@ -109,45 +115,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Регистрация
-  const register = async (
-    email: string,
-    password: string,
-    full_name: string,
-    phone: string,
-    role: string = 'customer'
-  ) => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          full_name,
-          phone,
-          role
-        })
-      });
+  // В файле app/context/AuthContext.tsx
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Registration failed');
-      }
+// Регистрация с автоматическим логином после успеха
+const register = async (
+  email: string,
+  password: string,
+  full_name: string,
+  phone: string,
+  role: string = 'customer'
+) => {
+  setIsLoading(true);
+  try {
+    // --- ШАГ 1: РЕГИСТРАЦИЯ ---
+    const registerResponse = await fetch(`${API_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, full_name, phone, role })
+    });
 
-      const data = await response.json();
-      setToken(data.access_token);
-      setUser(data.user);
-      localStorage.setItem('auth_token', data.access_token);
-    } catch (error) {
-      console.error('Register error:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
+    if (!registerResponse.ok) {
+      // Если регистрация не удалась, выбрасываем ошибку
+      const error = await registerResponse.json();
+      throw new Error(error.detail || 'Registration failed');
     }
-  };
+
+    // Регистрация прошла успешно! Теперь логинимся.
+    console.log('✅ Registration successful. Now logging in...');
+
+    // --- ШАГ 2: АВТОМАТИЧЕСКИЙ ЛОГИН ---
+    // Вызываем нашу уже существующую функцию login
+    await login(email, password);
+
+    // Функция login сама обработает токен, пользователя и localStorage.
+    // Больше здесь ничего делать не нужно.
+
+  } catch (error) {
+    console.error('Register process error:', error);
+    // Передаем ошибку дальше, чтобы форма могла ее показать
+    throw error;
+  } finally {
+    // В любом случае выключаем загрузку
+    setIsLoading(false);
+  }
+};
+
 
   // Логаут
   const logout = () => {

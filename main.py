@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from pathlib import Path
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-
+from app.api import auth
 from app.core.config import settings
 from app.api import restaurants, bookings, photos
 from app.api.bookings import router as bookings_router
@@ -19,7 +19,7 @@ from app.api.bookings import router as bookings_router
 # ============================================
  
 app = FastAPI(
-    title="RestoBoost API",
+    title="Orynbar API",
     description="Restaurant booking platform with dynamic discounts",
     version="2.0.0",
     debug=settings.DEBUG
@@ -35,6 +35,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
+        "https://orynbar.com",
         settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else "http://localhost:3000"
     ],
     allow_credentials=True,
@@ -73,6 +74,7 @@ class LoginRequest(BaseModel):
 app.include_router(restaurants.router, prefix="/api/restaurants", tags=["Restaurants"])
 app.include_router(bookings_router, prefix="/api/bookings")
 app.include_router(photos.router, prefix="/api", tags=["Photos"])
+app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 
 
 # ============================================
