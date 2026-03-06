@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { API_BASE } from '@/lib/config';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -180,32 +181,58 @@ export default function RestaurantDetail() {
     return now.toISOString().slice(0, 10);
   }, []);
 
+  // ↓↓↓ ЗАМЕНИТЕ ВАШ useEffect НА ЭТОТ ↓↓↓
+
   useEffect(() => {
-    if (!restaurantId) return;
+    if (!restaurantId) {
+      // Если ID нет, убедимся, что мы не в состоянии вечной загрузки.
+      setLoading(false); 
+      return;
+    }
+
     const controller = new AbortController();
 
     const loadRestaurant = async () => {
+      // ИЗМЕНЕНИЕ 1: Сбрасываем все состояния перед новым запросом.
+      // Это гарантирует, что мы не показываем старые данные или ошибки.
+      setRestaurant(null);
+      setError(null);
+      setLoading(true);
+
       try {
-        setLoading(true);
-        const res = await fetch(`${API_BASE_URL}/api/restaurants/${restaurantId}`, {
+        const res = await fetch(`${API_BASE}/api/restaurants/${restaurantId}`, {
           signal: controller.signal,
           cache: 'no-store',
         });
-        if (!res.ok) throw new Error('Failed to load restaurant');
+
+        if (!res.ok) {
+          // Если ответ не ОК, это ошибка.
+          throw new Error(`Ошибка сети: ${res.status}`);
+        }
+
         const data = await res.json();
+        // ИЗМЕНЕНИЕ 2: Устанавливаем данные и СРАЗУ ЖЕ выключаем загрузку.
+        // Это атомарная операция, которая предотвращает гонку состояний.
         setRestaurant(data);
-        setError(null);
+        setLoading(false); 
+
       } catch (e: any) {
-        if (e?.name === 'AbortError') return;
-        setError('Не удалось загрузить данные ресторана');
-        setRestaurant(null);
-      } finally {
+        if (e?.name === 'AbortError') {
+          console.log('Запрос отменен');
+          return;
+        }
+        // Если произошла ошибка, устанавливаем ошибку и выключаем загрузку.
+        setError('Не удалось загрузить данные ресторана.');
         setLoading(false);
-      }
+      } 
+      // Блок finally нам больше не нужен, так как мы управляем setLoading в try/catch.
     };
 
     loadRestaurant();
-    return () => controller.abort();
+
+    return () => {
+      controller.abort();
+    };
   }, [restaurantId]);
 
   useEffect(() => {
@@ -219,7 +246,7 @@ export default function RestaurantDetail() {
     const loadTimeslots = async () => {
       try {
         const res = await fetch(
-          `${API_BASE_URL}/api/bookings/available-slots?restaurant_id=${restaurantId}&date=${selectedDate}`,
+          `${API_BASE}/api/bookings/available-slots?restaurant_id=${restaurantId}&date=${selectedDate}`,
           { signal: controller.signal }
         );
         if (!res.ok) throw new Error('Failed to load timeslots');
@@ -311,16 +338,20 @@ export default function RestaurantDetail() {
   };
 
 
-  if (loading && !restaurant) {
+  // ↓↓↓ ВСТАВЬТЕ ЭТОТ КОД НА МЕСТО СТАРОГО ↓↓↓
+
+  // 1. Сначала показываем загрузчик, если loading=true ИЛИ ID еще не определился.
+  if (loading || !restaurantId) {
     return <div className="min-h-screen flex items-center justify-center">Загрузка...</div>;
   }
 
-  if (error || !restaurant) {
+  // 2. Теперь, когда загрузка точно завершена, проверяем на ошибки.
+  if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="p-8 max-w-md">
           <h2 className="text-xl font-bold text-destructive mb-2">Ошибка</h2>
-          <p>{error || 'Ресторан не найден'}</p>
+          <p>{error}</p>
           <Button className="mt-4 w-full" onClick={() => router.push('/')}>
             Главная
           </Button>
@@ -328,6 +359,24 @@ export default function RestaurantDetail() {
       </div>
     );
   }
+
+  // 3. И только теперь, если нет ни загрузки, ни ошибки, но ресторана нет - он не найден.
+  if (!restaurant) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="p-8 max-w-md">
+          <h2 className="text-xl font-bold text-destructive mb-2">Ошибка</h2>
+          <p>Ресторан не найден</p>
+          <Button className="mt-4 w-full" onClick={() => router.push('/')}>
+            Главная
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+// ↑↑↑ КОНЕЦ БЛОКА ДЛЯ ЗАМЕНЫ ↑↑↑
+
 
   const openLightbox = (index: number) => {
     setCurrentPhotoIndex(index);

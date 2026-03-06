@@ -1,16 +1,11 @@
-import { PublicHeader } from '@/components/headers/public-header';
+// frontend/app/(public)/layout.tsx
 
+// Этот layout теперь отвечает только за то, чтобы "пробросить" дочерние элементы дальше.
+// Он больше не добавляет никакой своей разметки.
 export default function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="min-h-screen bg-background">
-      <PublicHeader />
-      <main className="container mx-auto px-4 py-8">
-        {children}
-      </main>
-    </div>
-  );
+  return <>{children}</>;
 }
