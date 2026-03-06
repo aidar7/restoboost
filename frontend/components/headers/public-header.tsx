@@ -45,7 +45,7 @@ export function PublicHeader() {
         {/* 1. Логотип */}
         <Link href="/" className="flex items-center gap-2 font-bold text-2xl text-foreground">
           <span className="text-3xl">🍽️</span>
-          <span className="hidden md:inline">Keshme</span>
+          <span className="hidden md:inline">Orynbar</span>
         </Link>
 
         {/* 2. Поиск (с добавленной логикой) */}
