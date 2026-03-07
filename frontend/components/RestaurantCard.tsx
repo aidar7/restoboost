@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Heart, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { BadgeType, getBadgeConfig } from './badge-config';
 
 interface Restaurant {
   id: number;
@@ -16,7 +17,9 @@ interface Restaurant {
   cuisine: string[];
   timeslots?: Array<{ time: string; discount: number }>;
   popularity?: number;
+  badgeType?: BadgeType;
 }
+
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -60,15 +63,12 @@ export default function RestaurantCard({ restaurant, getCategoryIcon }: Restaura
     setIsFavorite(!isFavorite);
   };
 
-  // Get first 5 timeslots to display
-  const displayedTimeslots = restaurant.timeslots?.slice(0, 5) || [];
-
   return (
     <Link href={`/restaurant/${restaurant.id}`}>
-      <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 cursor-pointer h-full flex flex-col">
-        
+      <div className="bg-white/80 backdrop-blur-sm rounded-xl overflow-hidden border border-gray-200/50 hover:border-gray-300/70 transition-colors duration-300 cursor-pointer h-full flex flex-col">
+  
         {/* Image Carousel Section */}
-        <div className="relative h-56 bg-gray-200 overflow-hidden group">
+        <div className="relative h-56 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden group">
           {currentPhoto ? (
             <img
               src={currentPhoto}
@@ -82,29 +82,17 @@ export default function RestaurantCard({ restaurant, getCategoryIcon }: Restaura
             </div>
           )}
 
-          {/* Rating Badge - Top Right */}
-          {restaurant.rating > 0 && (
-            <div className="absolute top-3 right-3 bg-white rounded-lg shadow-lg p-2 flex flex-col items-center min-w-[60px]">
-              <span className="text-2xl font-bold text-gray-900">{restaurant.rating.toFixed(1)}</span>
-              <div className="flex gap-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    size={12}
-                    className={i < Math.round(restaurant.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
-                  />
-                ))}
-              </div>
-              {restaurant.timeslots && restaurant.timeslots.length > 0 && (
-                <span className="text-xs text-gray-600 mt-1">({restaurant.timeslots.length})</span>
-              )}
-            </div>
+          {/* Badge "Новый" - Top Left */}
+          {restaurant.badgeType && (
+            <Badge className={`absolute top-3 left-3 ${getBadgeConfig(restaurant.badgeType).bgColor} ${getBadgeConfig(restaurant.badgeType).textColor} border-0 text-xs`}>
+              {getBadgeConfig(restaurant.badgeType).label}
+            </Badge>
           )}
 
-          {/* Favorite Button - Top Left */}
+          {/* Favorite Button - Top Right */}
           <button
             onClick={handleFavoriteClick}
-            className="absolute top-3 left-3 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors"
+            className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-gray-100/80 transition-colors border border-gray-200/50"
           >
             <Heart
               size={20}
@@ -147,77 +135,72 @@ export default function RestaurantCard({ restaurant, getCategoryIcon }: Restaura
               </button>
             </>
           )}
-
-          {/* Insider Badge */}
-          <Badge className="absolute top-3 right-3 bottom-auto left-3 w-fit bg-gray-600 text-white border-0 text-xs">
-            Новый
-          </Badge>
         </div>
 
         {/* Content Section */}
-        <div className="flex-1 flex flex-col p-4 space-y-3">
-          
+        <div className="flex-1 flex flex-col p-4">
           {/* Restaurant Name */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 line-clamp-2">
-              {restaurant.name}
-            </h3>
-          </div>
+<h3 className="text-lg font-bold text-gray-900 line-clamp-2 mb-2">
+  {restaurant.name}
+</h3>
 
-          {/* Address */}
-          {restaurant.address && (
-            <p className="text-sm text-gray-600 line-clamp-1">
-              📍 {restaurant.address}
-            </p>
-          )}
+{/* Address */}
+{restaurant.address && (
+  <p className="text-sm text-gray-600 line-clamp-1 mb-2">
+    📍 {restaurant.address}
+  </p>
+)}
 
-          {/* Cuisine & Avg Price */}
-          <div className="text-sm text-gray-700">
-            {restaurant.cuisine?.length > 0 && (
-              <span>{restaurant.cuisine.slice(0, 2).join(' • ')}</span>
-            )}
-            {restaurant.avg_check && (
-              <span className="ml-2">• Средний чек {restaurant.avg_check}₸</span>
-            )}
-          </div>
 
-          {/* Discount Badge
-          {maxDiscount > 0 && (
-            <div className="flex items-center gap-2">
-              <Badge className="bg-gray-900 text-white text-sm font-semibold px-3 py-1">
-                Up to -{maxDiscount}%
-              </Badge>
-              {restaurant.popularity && (
-                <Badge className="bg-orange-100 text-orange-800 text-xs">
-                  🍽️ Yums x{restaurant.popularity}
-                </Badge>
-              )}
-            </div>
-          )} */}
+{/* Cuisine & Avg Price */}
+<div className="text-sm text-gray-700 flex flex-wrap gap-1 mb-2">
+  {restaurant.cuisine?.length > 0 && (
+    <span>{restaurant.cuisine.slice(0, 2).join(' • ')}</span>
+  )}
+  {restaurant.cuisine?.length > 0 && restaurant.avg_check && (
+    <span>•</span>
+  )}
+  {restaurant.avg_check && (
+    <span>Средний чек {restaurant.avg_check}₸</span>
+  )}
+</div>
 
-          {/* Available Timeslots
-          {displayedTimeslots.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs text-gray-600 font-semibold">Available times:</p>
-              <div className="flex flex-wrap gap-2">
-                {displayedTimeslots.map((slot, idx) => (
-                  <div key={idx} className="flex flex-col items-center">
-                    <Badge className="bg-teal-700 text-white text-xs font-semibold px-2 py-1">
-                      {slot.time}
-                    </Badge>
-                    <span className="text-xs text-gray-600 font-semibold mt-0.5">
-                      -{slot.discount}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )} */}
+{/* Rating */}
+{restaurant.rating > 0 && (
+  <div className="flex items-center gap-2 mb-2">
+    <div className="flex gap-0.5">
+      {[...Array(5)].map((_, i) => (
+        <Star
+          key={i}
+          size={14}
+          className={i < Math.round(restaurant.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+        />
+      ))}
+    </div>
+    <span className="font-semibold text-gray-900 text-sm">{restaurant.rating.toFixed(1)}</span>
+  </div>
+)}
+
+{/* Discount Badge */}
+{maxDiscount > 0 && (
+  <div className="flex items-center gap-2 mb-3">
+    <Badge className="bg-gray-900 text-white text-sm font-semibold px-3 py-1">
+      До -{maxDiscount}%
+    </Badge>
+    {restaurant.popularity && (
+      <Badge className="bg-orange-100 text-orange-800 text-xs">
+        🍽️ Популярно x{restaurant.popularity}
+      </Badge>
+    )}
+  </div>
+)}
+
 
           {/* Book Button */}
-          <button className="w-full mt-auto bg-teal-700 hover:bg-teal-800 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+          <button className="w-full mt-auto bg-teal-700 hover:bg-teal-800 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
             Забронировать 
           </button>
+
         </div>
       </div>
     </Link>
