@@ -1,3 +1,4 @@
+// frontend/components/PageHeader.tsx
 'use client';
 
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -24,52 +25,43 @@ export function PageHeader({
   children,
 }: PageHeaderProps) {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top bar */}
-      <div className="sticky top-0 z-40 bg-background/90 backdrop-blur border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          <Breadcrumbs items={breadcrumbs} />
-        </div>
-      </div>
+    // 1. Убираем все обертки (min-h-screen, bg-background, sticky). 
+    // Компонент теперь просто блок.
+    <>
+      {/* Блок с хлебными крошками и заголовком */}
+      <div className="mb-6"> { /* Добавляем отступ снизу */ }
+        <Breadcrumbs items={breadcrumbs} />
+        <h1 className="text-3xl md:text-4xl font-bold">{title}</h1>
 
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* HERO */}
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold">{title}</h1>
-
-          <div className="flex flex-wrap items-center gap-3 mt-3">
-            {rating && (
-              <Badge variant="secondary" className="text-base py-1 px-3">
-                ★ {rating}
-              </Badge>
-            )}
-
-            {address && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="w-5 h-5" />
-                <span>{address}</span>
-              </div>
-            )}
-
-            {avgCheck && (
-              <div className="text-muted-foreground">💰 От {avgCheck} ₸</div>
-            )}
-          </div>
-
-          {cuisine && cuisine.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
-              {cuisine.map((c) => (
-                <Badge key={c} variant="outline">
-                  {c}
-                </Badge>
-              ))}
+        {/* Вся дополнительная информация (рейтинг, адрес и т.д.) */}
+        <div className="flex flex-wrap items-center gap-3 mt-3">
+          {rating && (
+            <Badge variant="secondary" className="text-base py-1 px-3">
+              ★ {rating}
+            </Badge>
+          )}
+          {address && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="w-5 h-5" />
+              <span>{address}</span>
             </div>
+          )}
+          {avgCheck && (
+            <div className="text-muted-foreground">💰 От {avgCheck} ₸</div>
           )}
         </div>
 
-        {/* CHILDREN (фото, контент и т.д.) */}
-        {children}
+        {cuisine && cuisine.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {cuisine.map((c) => (
+              <Badge key={c} variant="outline">{c}</Badge>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+
+      {/* 2. Основной контент страницы рендерится сразу после заголовка */}
+      {children}
+    </>
   );
 }

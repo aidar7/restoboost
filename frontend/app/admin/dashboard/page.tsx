@@ -33,7 +33,8 @@ import { CalendarDays, Users, TrendingUp, UtensilsCrossed } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { CheckCircle, Clock } from 'lucide-react';
-import { Breadcrumbs } from '@/components/breadcrumbs';
+import { PageHeader } from '@/components/PageHeader';
+
 
 
 
@@ -366,18 +367,13 @@ const fetchCompletedBookings = async () => {
     }
 
     return (
-    <div className="container mx-auto px-4 py-8">
-        <Breadcrumbs items={[
-      { label: 'Админ', href: '/admin' },
-      { label: 'Дашборд' }
-    ]} />
-        <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-            📊 Аналитика дашборда
-        </h1>
-        <p className="text-lg text-muted-foreground">Статистика бронирований и посещений</p>
-        </div>
-
+    <PageHeader
+        title="Аналитика дашборда"
+        breadcrumbs={[
+            { label: 'Админ', href: '/admin' },
+            { label: 'Дашборд' },
+        ]}
+    >
     {/* твои карточки KPI */}
 
 
@@ -858,6 +854,6 @@ const fetchCompletedBookings = async () => {
                     </Card>
                 </div>
             )}
-        </div>
+        </PageHeader>
     );
 }
