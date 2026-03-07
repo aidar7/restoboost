@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Breadcrumbs } from '@/components/breadcrumbs';
+import { PageHeader } from '@/components/PageHeader';
+
 
 const API_BASE = 'http://localhost:8000/api';
 
@@ -153,18 +154,13 @@ export default function AdminPage() {
   }, []);
 
   return (
-  <div className="container mx-auto max-w-6xl px-4 py-8">
-    <Breadcrumbs items={[
-      { label: 'Админ', href: '/admin' },
-      { label: 'Управление ресторанами' }
-    ]} />
-    {/* PAGE TITLE */}
-    <div className="mb-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-        ➕ Добавить ресторан
-      </h1>
-      <p className="text-lg text-muted-foreground">Управление списком ресторанов и акциями</p>
-    </div>
+  <PageHeader
+        title="Управление ресторанами"
+        breadcrumbs={[
+            { label: 'Админ' },
+            { label: 'Рестораны' }
+        ]}
+    >
 
     {/* Add Restaurant Form */}
 
@@ -560,7 +556,7 @@ export default function AdminPage() {
             </div>
           )}
         </div>
-      </div>
+      </PageHeader>
   
   );
 }

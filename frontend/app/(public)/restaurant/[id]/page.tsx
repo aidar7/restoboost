@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Breadcrumbs } from '@/components/breadcrumbs'; 
 import { PageHeader } from '@/components/PageHeader';
+import { Loader2, AlertCircle } from 'lucide-react';
+
 
 // shadcn tabs (обычно: '@/components/ui/tabs')
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -181,7 +183,6 @@ export default function RestaurantDetail() {
     return now.toISOString().slice(0, 10);
   }, []);
 
-  // ↓↓↓ ЗАМЕНИТЕ ВАШ useEffect НА ЭТОТ ↓↓↓
 
   useEffect(() => {
     if (!restaurantId) {
@@ -276,8 +277,6 @@ export default function RestaurantDetail() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ТОЛЬКО ИЗМЕНЕННАЯ ЧАСТЬ - функция handleSubmitBooking
-  // Найди эту функцию в твоем файле и замени её
 
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -384,47 +383,23 @@ export default function RestaurantDetail() {
   };
 
   return (
-    
-    <div className="min-h-screen bg-background">
+    <div className="max-w-6xl mx-auto px-4 py-6">
+    <PageHeader
+      title={restaurant.name}
+      breadcrumbs={[
+        { label: 'Рестораны', href: '/' },
+        { label: restaurant.name },
+      ]}
+      rating={restaurant.rating}
+      address={restaurant.address}
+      avgCheck={restaurant.avg_check}
+      cuisine={restaurant.cuisine}
+  >
       
-      {/* Top bar */}
-      <div className="sticky top-0 z-40 bg-background/90 backdrop-blur border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Breadcrumbs 
-            items={[
-              { label: '🏠 Главная', href: '/' },
-              { label: restaurant.name }
-            ]} 
-          />
-        </div>
-      </div>
+      
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* HERO */}
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold">{restaurant.name}</h1>
-
-          <div className="flex flex-wrap items-center gap-3 mt-3">
-            {restaurant.rating && (
-              <Badge variant="secondary" className="text-base py-1 px-3">
-                ★ {restaurant.rating}
-              </Badge>
-            )}
-
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <MapPin className="w-5 h-5" />
-              <span>{restaurant.address}</span>
-            </div>
-
-            <div className="text-muted-foreground">💰 От {restaurant.avg_check} ₸</div>
-          </div>
-
-          <div className="flex flex-wrap gap-2 mt-3">
-            {restaurant.cuisine.map((c) => (
-              <Badge key={c} variant="outline">
-                {c}
-              </Badge>
-            ))}
-          </div>
+        
+        
 
           {/* PHOTOS under hero */}
           <HeroGallery
@@ -432,7 +407,7 @@ export default function RestaurantDetail() {
             onOpen={openLightbox}
             onPick={(i) => setCurrentPhotoIndex(i)}
           />
-        </div>
+        
 
         {/* TABS (3 sections) */}
         <div className="mt-8">
@@ -644,6 +619,7 @@ export default function RestaurantDetail() {
         }
         onNext={() => setCurrentPhotoIndex((prev) => (prev + 1) % restaurant.photos.length)}
       />
+    </PageHeader>
     </div>
   );
 }
