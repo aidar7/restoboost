@@ -2,8 +2,7 @@
 'use client';
 
 import { Breadcrumbs } from '@/components/breadcrumbs';
-import { Badge } from '@/components/ui/badge';
-import { MapPin } from 'lucide-react';
+import { MapPin, UtensilsCrossed, Star } from 'lucide-react';
 
 interface PageHeaderProps {
   title: string;
@@ -25,42 +24,56 @@ export function PageHeader({
   children,
 }: PageHeaderProps) {
   return (
-    // 1. Убираем все обертки (min-h-screen, bg-background, sticky). 
-    // Компонент теперь просто блок.
     <>
-      {/* Блок с хлебными крошками и заголовком */}
-      <div className="mb-6"> { /* Добавляем отступ снизу */ }
+      {/* Breadcrumbs */}
+      <div className="mb-6">
         <Breadcrumbs items={breadcrumbs} />
-        <h1 className="text-3xl md:text-4xl font-bold">{title}</h1>
-
-        {/* Вся дополнительная информация (рейтинг, адрес и т.д.) */}
-        <div className="flex flex-wrap items-center gap-3 mt-3">
-          {rating && (
-            <Badge variant="secondary" className="text-base py-1 px-3">
-              ★ {rating}
-            </Badge>
-          )}
-          {address && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <MapPin className="w-5 h-5" />
-              <span>{address}</span>
-            </div>
-          )}
-          {avgCheck && (
-            <div className="text-muted-foreground">💰 От {avgCheck} ₸</div>
-          )}
-        </div>
-
-        {cuisine && cuisine.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3">
-            {cuisine.map((c) => (
-              <Badge key={c} variant="outline">{c}</Badge>
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* 2. Основной контент страницы рендерится сразу после заголовка */}
+      {/* Title */}
+      <h1 className="text-4xl md:text-5xl font-bold mb-4">{title}</h1>
+
+      {/* Address - с иконкой */}
+      {address && (
+        <div className="flex items-center gap-2 text-gray-600 mb-2">
+          <MapPin className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{address}</span>
+        </div>
+      )}
+
+      {/* Cuisine & Avg Check - с иконкой */}
+      <div className="flex items-center gap-2 text-gray-600 mb-2">
+        <UtensilsCrossed className="w-5 h-5 flex-shrink-0" />
+        <div className="text-sm text-gray-700 flex flex-wrap gap-1">
+          {cuisine && cuisine.length > 0 && (
+            <span>{cuisine.slice(0, 2).join(' • ')}</span>
+          )}
+          {cuisine && cuisine.length > 0 && avgCheck && (
+            <span>•</span>
+          )}
+          {avgCheck && (
+            <span>Средний чек {avgCheck}₸</span>
+          )}
+        </div>
+      </div>
+
+      {/* Rating - с иконкой */}
+      {rating && (
+        <div className="flex items-center gap-2 mb-2">
+          <div className="flex gap-0.5 flex-shrink-0">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                size={16}
+                className={i < Math.round(rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+              />
+            ))}
+          </div>
+          <span className="font-semibold text-gray-900">{rating.toFixed(1)}</span>
+        </div>
+      )}
+
+      {/* Main content */}
       {children}
     </>
   );
