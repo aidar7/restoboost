@@ -80,11 +80,11 @@ export default function MyBookingsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return <Badge className="bg-green-100 text-green-800">Активная</Badge>;
+        return <Badge className="bg-success-light text-success">Активная</Badge>;
       case 'completed':
-        return <Badge className="bg-blue-100 text-blue-800">Завершена</Badge>;
+        return <Badge className="bg-info-light text-info">Завершена</Badge>;
       case 'cancelled':
-        return <Badge className="bg-red-100 text-red-800">Отменена</Badge>;
+        return <Badge className="bg-error-light text-error">Отменена</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -107,60 +107,60 @@ export default function MyBookingsPage() {
     const isCopied = copiedCode === booking.confirmation_code;
 
     return (
-      <Card className="p-6 mb-4 hover:shadow-lg transition-shadow border border-gray-200/50 bg-white/80 backdrop-blur-sm">
+      <Card className="p-6 mb-4 hover:shadow-lg transition-shadow border border-border/50 bg-card/80 backdrop-blur-sm">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
           {/* Left: Restaurant Info */}
           <div className="flex-1">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
+            <h3 className="text-lg font-bold text-foreground mb-4">
               {booking.restaurant_name}
             </h3>
 
-            <div className="space-y-2.5 text-sm text-gray-600">
+            <div className="space-y-2.5 text-sm text-muted-foreground">
               {/* Date */}
               <div className="flex items-center gap-3">
-                <Calendar className="w-5 h-5 flex-shrink-0 text-gray-400" />
+                <Calendar className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
                 <span>{date}</span>
               </div>
 
               {/* Time */}
               <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 flex-shrink-0 text-gray-400" />
+                <Clock className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
                 <span>{time}</span>
               </div>
 
               {/* Party Size */}
               <div className="flex items-center gap-3">
-                <Users className="w-5 h-5 flex-shrink-0 text-gray-400" />
+                <Users className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
                 <span>{booking.party_size} {booking.party_size === 1 ? 'гость' : 'гостей'}</span>
               </div>
 
               {/* Guest Name */}
-              <div className="text-gray-700 pt-2 border-t border-gray-200/30">
+              <div className="text-foreground pt-2 border-t border-border/30">
                 <span className="font-semibold">Имя:</span> {booking.guest_name}
               </div>
 
               {/* Confirmation Code */}
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-700">Код:</span>
-                <code className="bg-gray-100 px-2 py-1 rounded text-gray-900 font-mono">
+                <span className="font-semibold text-foreground">Код:</span>
+                <code className="bg-gray-50 px-2 py-1 rounded text-foreground font-mono">
                   {booking.confirmation_code}
                 </code>
                 <button
                   onClick={() => copyToClipboard(booking.confirmation_code)}
-                  className="p-1 hover:bg-gray-200 rounded transition-colors"
+                  className="p-1 hover:bg-gray-50 rounded transition-colors"
                   title="Скопировать код"
                 >
                   {isCopied ? (
-                    <Check className="w-4 h-4 text-green-600" />
+                    <Check className="w-4 h-4 text-success" />
                   ) : (
-                    <Copy className="w-4 h-4 text-gray-400" />
+                    <Copy className="w-4 h-4 text-muted-foreground" />
                   )}
                 </button>
               </div>
 
               {/* Discount */}
               {booking.discount_applied && booking.discount_applied > 0 && (
-                <div className="text-green-600 font-semibold pt-2">
+                <div className="text-success font-semibold pt-2">
                   💰 Скидка: {booking.discount_applied}%
                 </div>
               )}
@@ -175,7 +175,7 @@ export default function MyBookingsPage() {
               <Button 
                 variant="outline" 
                 size="sm"
-                className="text-red-600 border-red-200 hover:bg-red-50"
+                className="text-error border-error-light hover:bg-error-light"
               >
                 Отменить
               </Button>
@@ -199,16 +199,16 @@ export default function MyBookingsPage() {
           // Форма ввода номера телефона
           <div className="mt-8">
             <Card className="p-8 max-w-md mx-auto">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl font-bold text-foreground mb-2">
                 Найти мои бронирования
               </h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Введите номер телефона, который вы использовали при бронировании
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Номер телефона
                   </label>
                   <Input
@@ -225,16 +225,16 @@ export default function MyBookingsPage() {
                 </div>
 
                 {error && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex gap-2">
-                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">{error}</p>
+                  <div className="p-3 bg-error-light border border-error-light rounded-lg flex gap-2">
+                    <AlertCircle className="w-5 h-5 text-error flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-error">{error}</p>
                   </div>
                 )}
 
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-teal-700 hover:bg-teal-800 text-white"
+                  className="w-full bg-booking hover:bg-booking-hover text-white"
                 >
                   {loading ? (
                     <>
@@ -253,8 +253,8 @@ export default function MyBookingsPage() {
           <>
             <div className="mt-8 flex justify-between items-center">
               <div>
-                <p className="text-gray-600">
-                  Номер телефона: <span className="font-semibold text-gray-900">{phone}</span>
+                <p className="text-muted-foreground">
+                  Номер телефона: <span className="font-semibold text-foreground">{phone}</span>
                 </p>
               </div>
               <Button
@@ -272,19 +272,19 @@ export default function MyBookingsPage() {
 
             {loading ? (
               <div className="flex justify-center items-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-booking" />
               </div>
             ) : bookings.length === 0 ? (
               <div className="mt-8 text-center py-12 border-2 border-dashed rounded-lg">
-                <p className="text-lg font-medium text-gray-600">У вас пока нет бронирований</p>
-                <p className="text-gray-500 mt-2">Забронируйте ресторан, чтобы увидеть его здесь</p>
+                <p className="text-lg font-medium text-muted-foreground">У вас пока нет бронирований</p>
+                <p className="text-muted-foreground mt-2">Забронируйте ресторан, чтобы увидеть его здесь</p>
               </div>
             ) : (
               <div className="mt-8 space-y-8">
                 {/* Active Bookings */}
                 {activeBookings.length > 0 && (
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                    <h2 className="text-2xl font-bold text-foreground mb-4">
                       Активные бронирования ({activeBookings.length})
                     </h2>
                     {activeBookings.map(booking => (
@@ -296,7 +296,7 @@ export default function MyBookingsPage() {
                 {/* Completed Bookings */}
                 {completedBookings.length > 0 && (
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                    <h2 className="text-2xl font-bold text-foreground mb-4">
                       Завершённые бронирования ({completedBookings.length})
                     </h2>
                     {completedBookings.map(booking => (
@@ -308,7 +308,7 @@ export default function MyBookingsPage() {
                 {/* Cancelled Bookings */}
                 {cancelledBookings.length > 0 && (
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                    <h2 className="text-2xl font-bold text-foreground mb-4">
                       Отменённые бронирования ({cancelledBookings.length})
                     </h2>
                     {cancelledBookings.map(booking => (

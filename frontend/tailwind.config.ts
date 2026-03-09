@@ -7,9 +7,13 @@ const config: Config = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        booking: 'var(--booking)',
+        'booking-hover': 'var(--booking-hover)',
+      },
+    },
   },
   plugins: [],
-  
 }
 export default config

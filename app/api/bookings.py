@@ -726,7 +726,7 @@ async def cancel_booking(booking_id: int):
     
     return {"success": True, "message": "Бронь отменена"}
 
-@router.put("/discount_rules/{discount_id}")  # ✅ ИСПРАВЛЕНО!
+@router.put("/discount_rules/{discount_id}")
 async def update_discount_rule(
     discount_id: int,
     restaurant_id: int = Form(...),
@@ -740,6 +740,13 @@ async def update_discount_rule(
 ):
     """Обновить скидку"""
     try:
+        # ✅ ДОБАВЬ ЛОГИРОВАНИЕ:
+        print(f"🔍 PUT /discount_rules/{discount_id}")
+        print(f"  discount_id: {discount_id}")
+        print(f"  time_start: {time_start}")
+        print(f"  time_end: {time_end}")
+        print(f"  discount: {discount}")
+        
         data = {
             "restaurant_id": restaurant_id,
             "service_id": service_id if service_id and service_id.strip() else None,
@@ -752,16 +759,22 @@ async def update_discount_rule(
             "is_active": True,
         }
         
+        print(f"  Отправляю в БД: {data}")
+        
         result = await db.update(
             "discount_rules",
             filters={"id": f"eq.{discount_id}"},
             data=data
         )
+        
+        print(f"  Результат обновления: {result}")
+        
         invalidate_cache(restaurant_id)
         return result
     except Exception as e:
         print(f"❌ Error updating discount: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
 
 
 @router.delete("/discount_rules/{discount_id}")  # ✅ ИСПРАВЛЕНО!

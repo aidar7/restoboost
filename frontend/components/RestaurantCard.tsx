@@ -65,10 +65,10 @@ export default function RestaurantCard({ restaurant, getCategoryIcon }: Restaura
 
   return (
     <Link href={`/restaurant/${restaurant.id}`}>
-      <div className="bg-white/80 backdrop-blur-sm rounded-xl overflow-hidden border border-gray-200/50 hover:border-gray-300/70 transition-colors duration-300 cursor-pointer h-full flex flex-col">
+      <div className="bg-card/80 backdrop-blur-sm rounded-xl overflow-hidden border border-border/50 hover:border-border/70 transition-colors duration-300 cursor-pointer h-full flex flex-col">
   
         {/* Image Carousel Section */}
-        <div className="relative h-56 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden group">
+        <div className="relative h-56 bg-gradient-to-br from-gray-50 to-gray-50 overflow-hidden group">
           {currentPhoto ? (
             <img
               src={currentPhoto}
@@ -76,9 +76,9 @@ export default function RestaurantCard({ restaurant, getCategoryIcon }: Restaura
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100">
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
               <span className="text-5xl mb-2">{getCategoryIcon(restaurant.category)}</span>
-              <span className="text-xs text-gray-500 text-center px-4">{restaurant.name}</span>
+              <span className="text-xs text-muted-foreground text-center px-4">{restaurant.name}</span>
             </div>
           )}
 
@@ -92,11 +92,11 @@ export default function RestaurantCard({ restaurant, getCategoryIcon }: Restaura
           {/* Favorite Button - Top Right */}
           <button
             onClick={handleFavoriteClick}
-            className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-gray-100/80 transition-colors border border-gray-200/50"
+            className="absolute top-3 right-3 bg-card/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-gray-50/80 transition-colors border border-border/50"
           >
             <Heart
               size={20}
-              className={isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}
+              className={isFavorite ? 'fill-error text-error' : 'text-muted-foreground'}
             />
           </button>
 
@@ -140,20 +140,20 @@ export default function RestaurantCard({ restaurant, getCategoryIcon }: Restaura
         {/* Content Section */}
         <div className="flex-1 flex flex-col p-4">
           {/* Restaurant Name */}
-<h3 className="text-lg font-bold text-gray-900 line-clamp-2 mb-2">
+<h3 className="text-lg font-bold text-foreground line-clamp-2 mb-2">
   {restaurant.name}
 </h3>
 
 {/* Address */}
 {restaurant.address && (
-  <p className="text-sm text-gray-600 line-clamp-1 mb-2">
+  <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
     📍 {restaurant.address}
   </p>
 )}
 
 
 {/* Cuisine & Avg Price */}
-<div className="text-sm text-gray-700 flex flex-wrap gap-1 mb-2">
+<div className="text-sm text-foreground flex flex-wrap gap-1 mb-2">
   {restaurant.cuisine?.length > 0 && (
     <span>{restaurant.cuisine.slice(0, 2).join(' • ')}</span>
   )}
@@ -173,22 +173,22 @@ export default function RestaurantCard({ restaurant, getCategoryIcon }: Restaura
         <Star
           key={i}
           size={14}
-          className={i < Math.round(restaurant.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+          className={i < Math.round(restaurant.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}
         />
       ))}
     </div>
-    <span className="font-semibold text-gray-900 text-sm">{restaurant.rating.toFixed(1)}</span>
+    <span className="font-semibold text-foreground text-sm">{restaurant.rating.toFixed(1)}</span>
   </div>
 )}
 
 {/* Discount Badge */}
 {maxDiscount > 0 && (
   <div className="flex items-center gap-2 mb-3">
-    <Badge className="bg-gray-900 text-white text-sm font-semibold px-3 py-1">
+    <Badge className="bg-foreground text-background text-sm font-semibold px-3 py-1">
       До -{maxDiscount}%
     </Badge>
     {restaurant.popularity && (
-      <Badge className="bg-orange-100 text-orange-800 text-xs">
+      <Badge className="bg-warning-light text-warning text-xs">
         🍽️ Популярно x{restaurant.popularity}
       </Badge>
     )}
@@ -197,7 +197,7 @@ export default function RestaurantCard({ restaurant, getCategoryIcon }: Restaura
 
 
           {/* Book Button */}
-          <button className="w-full mt-auto bg-teal-700 hover:bg-teal-800 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
+          <button className="w-full mt-auto bg-booking hover:bg-booking-hover text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
             Забронировать 
           </button>
 

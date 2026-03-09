@@ -9,27 +9,27 @@ export interface BadgeConfig {
 export const BADGE_CONFIGS: Record<BadgeType, BadgeConfig> = {
   new: {
     label: 'Новый',
-    bgColor: 'bg-gray-600',
-    textColor: 'text-white',
+    bgColor: 'bg-foreground',
+    textColor: 'text-background',
   },
   festival: {
     label: 'Фестиваль',
-    bgColor: 'bg-orange-600',
+    bgColor: 'bg-warning',
     textColor: 'text-white',
   },
   popular: {
     label: 'Популярно',
-    bgColor: 'bg-green-600',
+    bgColor: 'bg-success',
     textColor: 'text-white',
   },
   hot: {
     label: 'Горячее',
-    bgColor: 'bg-red-600',
+    bgColor: 'bg-error',
     textColor: 'text-white',
   },
   premium: {
     label: 'Премиум',
-    bgColor: 'bg-purple-600',
+    bgColor: 'bg-primary',
     textColor: 'text-white',
   },
 };

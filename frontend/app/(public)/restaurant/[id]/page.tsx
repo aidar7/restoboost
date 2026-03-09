@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Breadcrumbs } from '@/components/breadcrumbs'; 
+import { Breadcrumbs } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
 import { Loader2, AlertCircle } from 'lucide-react';
 
@@ -187,7 +187,7 @@ export default function RestaurantDetail() {
   useEffect(() => {
     if (!restaurantId) {
       // Если ID нет, убедимся, что мы не в состоянии вечной загрузки.
-      setLoading(false); 
+      setLoading(false);
       return;
     }
 
@@ -215,7 +215,7 @@ export default function RestaurantDetail() {
         // ИЗМЕНЕНИЕ 2: Устанавливаем данные и СРАЗУ ЖЕ выключаем загрузку.
         // Это атомарная операция, которая предотвращает гонку состояний.
         setRestaurant(data);
-        setLoading(false); 
+        setLoading(false);
 
       } catch (e: any) {
         if (e?.name === 'AbortError') {
@@ -225,7 +225,7 @@ export default function RestaurantDetail() {
         // Если произошла ошибка, устанавливаем ошибку и выключаем загрузку.
         setError('Не удалось загрузить данные ресторана.');
         setLoading(false);
-      } 
+      }
       // Блок finally нам больше не нужен, так как мы управляем setLoading в try/catch.
     };
 
@@ -374,7 +374,7 @@ export default function RestaurantDetail() {
     );
   }
 
-// ↑↑↑ КОНЕЦ БЛОКА ДЛЯ ЗАМЕНЫ ↑↑↑
+  // ↑↑↑ КОНЕЦ БЛОКА ДЛЯ ЗАМЕНЫ ↑↑↑
 
 
   const openLightbox = (index: number) => {
@@ -384,22 +384,22 @@ export default function RestaurantDetail() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
-    <PageHeader
-      title={restaurant.name}
-      breadcrumbs={[
-        { label: 'Рестораны', href: '/' },
-        { label: restaurant.name },
-      ]}
-      rating={restaurant.rating}
-      address={restaurant.address}
-      avgCheck={restaurant.avg_check}
-      cuisine={restaurant.cuisine}
-  >
-      
-      
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        
-        
+      <PageHeader
+        title={restaurant.name}
+        breadcrumbs={[
+          { label: 'Рестораны', href: '/' },
+          { label: restaurant.name },
+        ]}
+        rating={restaurant.rating}
+        address={restaurant.address}
+        avgCheck={restaurant.avg_check}
+        cuisine={restaurant.cuisine}
+      >
+
+
+        <div className="max-w-6xl mx-auto px-4 py-6">
+
+
 
           {/* PHOTOS under hero */}
           <HeroGallery
@@ -407,219 +407,219 @@ export default function RestaurantDetail() {
             onOpen={openLightbox}
             onPick={(i) => setCurrentPhotoIndex(i)}
           />
-        
 
-        {/* TABS (3 sections) */}
-        <div className="mt-8">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
-            <TabsList className="w-full justify-start">
-              <TabsTrigger value="main">Основная</TabsTrigger>
-              <TabsTrigger value="details">Детали</TabsTrigger>
-              <TabsTrigger value="reviews">Отзывы</TabsTrigger>
-            </TabsList>
 
-            {/* TAB 1: Main (menu + booking + location — по желанию) */}
-            <TabsContent value="main" className="mt-6 space-y-6">
-              <Card className="p-6">
-                <h2 className="text-xl font-bold mb-2">Информация</h2>
-                <div className="text-muted-foreground">
-                  <div>{restaurant.address}</div>
-                  <div className="mt-2">Телефон: {restaurant.phone}</div>
-                </div>
-              </Card>
-              <Card className="p-6">
-                <h2 className="text-2xl font-bold mb-4">Бронирование</h2>
+          {/* TABS (3 sections) */}
+          <div className="mt-8">
+            <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
+              <TabsList className="w-full justify-start">
+                <TabsTrigger value="main">Основная</TabsTrigger>
+                <TabsTrigger value="details">Детали</TabsTrigger>
+                <TabsTrigger value="reviews">Отзывы</TabsTrigger>
+              </TabsList>
 
-                {bookingResult && (
-                  <div
-                    className={[
-                      'p-4 rounded-lg mb-4',
-                      bookingResult.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
-                    ].join(' ')}
-                  >
-                    {bookingResult.message}
+              {/* TAB 1: Main (menu + booking + location — по желанию) */}
+              <TabsContent value="main" className="mt-6 space-y-6">
+                <Card className="p-6">
+                  <h2 className="text-xl font-bold mb-2">Информация</h2>
+                  <div className="text-muted-foreground">
+                    <div>{restaurant.address}</div>
+                    <div className="mt-2">Телефон: {restaurant.phone}</div>
                   </div>
-                )}
+                </Card>
+                <Card className="p-6">
+                  <h2 className="text-2xl font-bold mb-4">Бронирование</h2>
 
-                <form onSubmit={handleSubmitBooking} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold mb-2">
-                        Дата <span className="text-destructive">*</span>
-                      </label>
-                      <Input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        min={minDate}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold mb-2">
-                        Гостей <span className="text-destructive">*</span>
-                      </label>
-                      <Select
-                        value={formData.party_size}
-                        onValueChange={(value) => setFormData({ ...formData, party_size: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
-                            <SelectItem key={num} value={String(num)}>
-                              {num} {num === 1 ? 'гость' : 'гостей'}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold mb-2">
-                        Время <span className="text-destructive">*</span>
-                      </label>
-                      <Input value={selectedTime || 'Выберите слот ниже'} readOnly />
-                    </div>
-                  </div>
-
-                  {selectedDate && (
-                    <div>
-                      <label className="block text-sm font-semibold mb-3">
-                        Выберите время <span className="text-destructive">*</span>
-                      </label>
-
-                      {timeslots.length === 0 ? (
-                        <div className="text-center py-6 text-muted-foreground text-sm">❌ Нет доступных слотов</div>
-                      ) : (
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                          {timeslots.map((slot) => (
-                            <button
-                              key={slot.time}
-                              type="button"
-                              disabled={!slot.available}
-                              onClick={() => handleSelectTimeslot(slot.time)}
-                              className={[
-                                'p-3 rounded-lg border-2 transition-all text-sm font-medium text-center',
-                                selectedTime === slot.time
-                                  ? 'bg-pink-500 text-white border-pink-500'
-                                  : 'border-border hover:border-pink-500',
-                                !slot.available ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-background',
-                              ].join(' ')}
-                            >
-                              <div className="font-semibold">{slot.time}</div>
-                              {slot.discount > 0 && <div className="text-xs mt-1">-{slot.discount}%</div>}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                  {bookingResult && (
+                    <div
+                      className={[
+                        'p-4 rounded-lg mb-4',
+                        bookingResult.success ? 'bg-success-light text-success' : 'bg-error-light text-error',
+                      ].join(' ')}
+                    >
+                      {bookingResult.message}
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold mb-2">
-                        Ваше имя <span className="text-destructive">*</span>
-                      </label>
-                      <Input
-                        type="text"
-                        name="guest_name"
-                        value={formData.guest_name}
-                        onChange={handleFormChange}
-                        required
-                      />
+                  <form onSubmit={handleSubmitBooking} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold mb-2">
+                          Дата <span className="text-destructive">*</span>
+                        </label>
+                        <Input
+                          type="date"
+                          value={selectedDate}
+                          onChange={(e) => setSelectedDate(e.target.value)}
+                          min={minDate}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold mb-2">
+                          Гостей <span className="text-destructive">*</span>
+                        </label>
+                        <Select
+                          value={formData.party_size}
+                          onValueChange={(value) => setFormData({ ...formData, party_size: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
+                              <SelectItem key={num} value={String(num)}>
+                                {num} {num === 1 ? 'гость' : 'гостей'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold mb-2">
+                          Время <span className="text-destructive">*</span>
+                        </label>
+                        <Input value={selectedTime || 'Выберите слот ниже'} readOnly />
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-semibold mb-2">
-                        Телефон <span className="text-destructive">*</span>
-                      </label>
-                      <Input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleFormChange}
-                        required
-                      />
+                    {selectedDate && (
+                      <div>
+                        <label className="block text-sm font-semibold mb-3">
+                          Выберите время <span className="text-destructive">*</span>
+                        </label>
+
+                        {timeslots.length === 0 ? (
+                          <div className="text-center py-6 text-muted-foreground text-sm">❌ Нет доступных слотов</div>
+                        ) : (
+                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                            {timeslots.map((slot) => (
+                              <button
+                                key={slot.time}
+                                type="button"
+                                disabled={!slot.available}
+                                onClick={() => handleSelectTimeslot(slot.time)}
+                                className={[
+                                  'p-3 rounded-lg border-2 transition-all text-sm font-medium text-center',
+                                  selectedTime === slot.time
+                                    ? 'bg-booking text-white border-booking'
+                                    : 'border-border hover:border-booking',
+                                  !slot.available ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-background',
+                                ].join(' ')}
+                              >
+                                <div className="font-semibold">{slot.time}</div>
+                                {slot.discount > 0 && <div className="text-xs mt-1">-{slot.discount}%</div>}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold mb-2">
+                          Ваше имя <span className="text-destructive">*</span>
+                        </label>
+                        <Input
+                          type="text"
+                          name="guest_name"
+                          value={formData.guest_name}
+                          onChange={handleFormChange}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold mb-2">
+                          Телефон <span className="text-destructive">*</span>
+                        </label>
+                        <Input
+                          type="tel"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleFormChange}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold mb-2">Email</label>
+                        <Input
+                          type="email"
+                          name="guest_email"
+                          value={formData.guest_email}
+                          onChange={handleFormChange}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold mb-2">Пожелания</label>
+                        <Textarea
+                          name="special_requests"
+                          value={formData.special_requests}
+                          onChange={handleFormChange}
+                          rows={3}
+                        />
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-semibold mb-2">Email</label>
-                      <Input
-                        type="email"
-                        name="guest_email"
-                        value={formData.guest_email}
-                        onChange={handleFormChange}
-                      />
-                    </div>
+                    <Button
+                      type="submit"
+                      disabled={!selectedDate || !selectedTime || !formData.guest_name || !formData.phone || isSubmitting}
+                      className="w-full mt-auto bg-booking hover:bg-booking-hover text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                    >
+                      {isSubmitting ? 'Бронирование...' : 'Забронировать'}
+                    </Button>
 
-                    <div>
-                      <label className="block text-sm font-semibold mb-2">Пожелания</label>
-                      <Textarea
-                        name="special_requests"
-                        value={formData.special_requests}
-                        onChange={handleFormChange}
-                        rows={3}
-                      />
-                    </div>
-                  </div>
+                    {selectedDiscount > 0 && (
+                      <div className="text-center text-sm text-success font-semibold">
+                        Скидка {selectedDiscount}% на это время
+                      </div>
+                    )}
+                  </form>
+                </Card>
+              </TabsContent>
 
-                  <Button
-                    type="submit"
-                    disabled={!selectedDate || !selectedTime || !formData.guest_name || !formData.phone || isSubmitting}
-                    className="w-full mt-auto bg-teal-700 hover:bg-teal-800 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-                  >
-                    {isSubmitting ? 'Бронирование...' : 'Забронировать'}
-                  </Button>
-
-                  {selectedDiscount > 0 && (
-                    <div className="text-center text-sm text-green-600 font-semibold">
-                      Скидка {selectedDiscount}% на это время
-                    </div>
+              {/* TAB 2: Details */}
+              <TabsContent value="details" className="mt-6 space-y-6">
+                <Card className="p-6">
+                  <h2 className="text-xl font-bold mb-2">О ресторане</h2>
+                  {restaurant.description ? (
+                    <p className="text-muted-foreground">{restaurant.description}</p>
+                  ) : (
+                    <p className="text-muted-foreground">
+                      Добавь текст: концепция, часы работы, парковка, условия, кухня, языки персонала.
+                    </p>
                   )}
-                </form>
-              </Card>
-            </TabsContent>
+                </Card>
+              </TabsContent>
 
-            {/* TAB 2: Details */}
-            <TabsContent value="details" className="mt-6 space-y-6">
-              <Card className="p-6">
-                <h2 className="text-xl font-bold mb-2">О ресторане</h2>
-                {restaurant.description ? (
-                  <p className="text-muted-foreground">{restaurant.description}</p>
-                ) : (
+              {/* TAB 3: Reviews */}
+              <TabsContent value="reviews" className="mt-6 space-y-6">
+                <Card className="p-6">
+                  <h2 className="text-xl font-bold mb-2">Отзывы</h2>
                   <p className="text-muted-foreground">
-                    Добавь текст: концепция, часы работы, парковка, условия, кухня, языки персонала.
+                    Здесь: рейтинг, breakdown (еда/сервис/атмосфера) + список отзывов.
                   </p>
-                )}
-              </Card>
-            </TabsContent>
-
-            {/* TAB 3: Reviews */}
-            <TabsContent value="reviews" className="mt-6 space-y-6">
-              <Card className="p-6">
-                <h2 className="text-xl font-bold mb-2">Отзывы</h2>
-                <p className="text-muted-foreground">
-                  Здесь: рейтинг, breakdown (еда/сервис/атмосфера) + список отзывов.
-                </p>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
-      </div>
 
-      <Lightbox
-        open={showLightbox}
-        photos={restaurant.photos}
-        currentPhotoIndex={currentPhotoIndex}
-        onClose={() => setShowLightbox(false)}
-        onPrev={() =>
-          setCurrentPhotoIndex((prev) => (prev - 1 + restaurant.photos.length) % restaurant.photos.length)
-        }
-        onNext={() => setCurrentPhotoIndex((prev) => (prev + 1) % restaurant.photos.length)}
-      />
-    </PageHeader>
+        <Lightbox
+          open={showLightbox}
+          photos={restaurant.photos}
+          currentPhotoIndex={currentPhotoIndex}
+          onClose={() => setShowLightbox(false)}
+          onPrev={() =>
+            setCurrentPhotoIndex((prev) => (prev - 1 + restaurant.photos.length) % restaurant.photos.length)
+          }
+          onNext={() => setCurrentPhotoIndex((prev) => (prev + 1) % restaurant.photos.length)}
+        />
+      </PageHeader>
     </div>
   );
 }
