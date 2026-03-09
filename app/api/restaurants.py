@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Restaurant API endpoints
 Handles CRUD operations for restaurants
@@ -17,6 +18,7 @@ router = APIRouter()
 async def get_restaurants(
     search: Optional[str] = None,
     category: Optional[str] = None,
+    city: Optional[str] = None,
     limit: int = Query(default=100, le=500)
 ):
     """
@@ -25,7 +27,7 @@ async def get_restaurants(
     """
     print("\n" + "="*50)
     print(f"🔍 GET /api/restaurants/ (ВОССТАНОВЛЕННАЯ ВЕРСИЯ)")
-    print(f"📊 Category: {category}, Search: {search}")
+    print(f"📊 Category: {category}, Search: {search}, City: {city}")
     print("="*50)
     
     try:
@@ -41,6 +43,12 @@ async def get_restaurants(
 
         restaurants = rpc_result if rpc_result is not None else []
         print(f"✅ Step 1 DONE: Got {len(restaurants)} restaurants via RPC")
+        
+        # Фильтрация по городу на стороне Python
+        if city and city != 'all' and restaurants:
+            print(f"Filtering by city '{city}' in Python...")
+            restaurants = [r for r in restaurants if r.get('city') == city]
+            print(f"✅ Found {len(restaurants)} restaurants in city '{city}'.")
         
         # Фильтрация по категории на стороне Python (как это было раньше)
         if category and category != 'all' and restaurants:
@@ -159,6 +167,7 @@ async def create_restaurant(
     address: str = Form(...),
     phone: str = Form(...),
     cuisine: str = Form(...),  # JSON string
+    city: str = Form(default="Astana"),
     description: Optional[str] = Form(""),
     discount: int = Form(...),
     time_start: str = Form(...),
@@ -178,6 +187,7 @@ async def create_restaurant(
         
         print(f"📝 Creating restaurant: {name}")
         print(f"   Cuisine: {cuisine_list}")
+        print(f"   City: {city}")
         print(f"   Photos: {len(photos)} files")
         
         restaurant_data = {
@@ -188,6 +198,7 @@ async def create_restaurant(
             "address": address.strip(),
             "phone": phone.strip(),
             "cuisine": cuisine_list,
+            "city": city.strip(),
             "description": description.strip() if description else "",
             "photos": []
         }
@@ -289,27 +300,26 @@ async def create_restaurant(
                     if public_url:
                         photo_urls.append(public_url)
                         photos_uploaded += 1
-                        print(f"✅ Photo uploaded: {unique_filename}")
+                        print(f"✅ Photo {photos_uploaded} uploaded: {unique_filename}")
                     else:
-                        print(f"❌ Failed to upload {photo.filename}")
-                    
-                except Exception as photo_error:
-                    print(f"❌ Failed to upload {photo.filename}: {photo_error}")
-                    import traceback
-                    traceback.print_exc()
-                    continue
-            
-            if photo_urls:
-                await restaurant_service.update(restaurant_id, photos=photo_urls)
-                restaurant["photos"] = photo_urls
-                print(f"✅ {photos_uploaded} photos added to restaurant")
+                        print(f"⚠️ Failed to upload photo: {photo.filename}")
+                
+                except Exception as e:
+                    print(f"⚠️ Error uploading photo {photo.filename}: {e}")
         
-        print(f"✅ Restaurant created: {restaurant['name']} (ID: {restaurant_id})")
+        if photo_urls:
+            await db.patch(
+                "restaurants",
+                filters={"id": f"eq.{restaurant_id}"},
+                data={"photos": photo_urls}
+            )
+            print(f"✅ Photos saved to restaurant: {len(photo_urls)} files")
         
+        print(f"🎉 Restaurant created successfully: {restaurant_id}")
         return {
             "success": True,
-            "message": "Ресторан успешно добавлен!",
-            "restaurant": restaurant,
+            "message": f"Ресторан '{name}' успешно создан",
+            "restaurant_id": restaurant_id,
             "photos_uploaded": photos_uploaded
         }
     
@@ -423,27 +433,195 @@ async def delete_restaurant_photo(restaurant_id: int, photo_index: int):
         raise HTTPException(status_code=500, detail=f"Ошибка удаления фото: {str(e)}")
 
 
+# === ↓↓↓ ИСПРАВЛЕННЫЙ PUT ENDPOINT ↓↓↓ ===
 @router.put("/{restaurant_id}")
-async def update_restaurant(restaurant_id: int, request: Request):
+async def update_restaurant(
+    restaurant_id: int,
+    name: Optional[str] = Form(None),
+    category: Optional[str] = Form(None),
+    rating: Optional[float] = Form(None),
+    avg_check: Optional[int] = Form(None),
+    address: Optional[str] = Form(None),
+    phone: Optional[str] = Form(None),
+    city: Optional[str] = Form(None),
+    cuisine: Optional[str] = Form(None),  # JSON string
+    description: Optional[str] = Form(None),
+    discount: Optional[int] = Form(None),
+    time_start: Optional[str] = Form(None),
+    time_end: Optional[str] = Form(None),
+    valid_from: Optional[str] = Form(None),
+    valid_to: Optional[str] = Form(None),
+    max_tables: Optional[int] = Form(None),
+    photos: List[UploadFile] = File(default=[]),
+    photos_to_delete: Optional[str] = Form(None)  # JSON string
+):
     """
-    Update restaurant
+    Update restaurant with FormData support (including photos)
     """
     try:
-        data = await request.json()
+        print("\n" + "="*50)
+        print(f"🔄 PUT /api/restaurants/{restaurant_id}")
+        print(f"📊 Updating: name={name}, city={city}, photos={len(photos)}")
+        print("="*50)
         
-        restaurant = await restaurant_service.update(restaurant_id, **data)
+        # Получаем текущий ресторан
+        restaurants = await db.get(
+            "restaurants",
+            filters={"id": f"eq.{restaurant_id}"},
+            limit=1
+        )
         
-        if not restaurant:
-            raise HTTPException(status_code=400, detail="Ошибка обновления")
+        if not restaurants:
+            raise HTTPException(status_code=404, detail="Ресторан не найден")
+        
+        current_restaurant = restaurants[0]
+        
+        # Подготавливаем данные для обновления
+        update_data = {}
+        
+        if name is not None:
+            update_data["name"] = name.strip()
+        if category is not None:
+            update_data["category"] = category
+        if rating is not None:
+            update_data["rating"] = float(rating)
+        if avg_check is not None:
+            update_data["avg_check"] = int(avg_check)
+        if address is not None:
+            update_data["address"] = address.strip()
+        if phone is not None:
+            update_data["phone"] = phone.strip()
+        if city is not None:
+            update_data["city"] = city.strip()
+        if description is not None:
+            update_data["description"] = description.strip()
+        
+        # Обработка кухни
+        if cuisine is not None:
+            try:
+                cuisine_list = json.loads(cuisine)
+                if not isinstance(cuisine_list, list):
+                    cuisine_list = [cuisine]
+            except json.JSONDecodeError:
+                cuisine_list = [cuisine]
+            update_data["cuisine"] = cuisine_list
+        
+        # Обработка фото
+        current_photos = current_restaurant.get("photos", [])
+        
+        # Удаляем фото, которые нужно удалить
+        if photos_to_delete:
+            try:
+                photos_urls_to_delete = json.loads(photos_to_delete)
+                for photo_url in photos_urls_to_delete:
+                    if photo_url in current_photos:
+                        current_photos.remove(photo_url)
+                        # Удаляем из хранилища
+                        try:
+                            if '/restaurant-photos/' in photo_url:
+                                path = photo_url.split('/restaurant-photos/')[-1]
+                            else:
+                                path = photo_url.split('/object/public/')[-1].replace('restaurant-photos/', '')
+                            await db.storage_delete(bucket="restaurant-photos", path=path)
+                            print(f"✅ Photo deleted: {path}")
+                        except Exception as e:
+                            print(f"⚠️ Could not delete from storage: {e}")
+            except json.JSONDecodeError:
+                print("⚠️ Could not parse photos_to_delete")
+        
+        # Загружаем новые фото
+        if photos and photos[0].filename:
+            print(f"📸 Uploading {len(photos)} new photos...")
+            for photo in photos:
+                try:
+                    if not photo.content_type.startswith('image/'):
+                        print(f"⚠️ Skipping non-image file: {photo.filename}")
+                        continue
+                    
+                    file_ext = photo.filename.split('.')[-1].lower()
+                    unique_filename = f"{restaurant_id}/{uuid.uuid4()}.{file_ext}"
+                    file_content = await photo.read()
+                    
+                    public_url = await db.storage_upload(
+                        bucket="restaurant-photos",
+                        path=unique_filename,
+                        file_bytes=file_content,
+                        content_type=photo.content_type
+                    )
+                    
+                    if public_url:
+                        current_photos.append(public_url)
+                        print(f"✅ Photo uploaded: {unique_filename}")
+                    else:
+                        print(f"⚠️ Failed to upload photo: {photo.filename}")
+                
+                except Exception as e:
+                    print(f"⚠️ Error uploading photo {photo.filename}: {e}")
+        
+        # Обновляем фото в данных
+        if current_photos or photos_to_delete:
+            update_data["photos"] = current_photos
+        
+        # Обновляем основные данные ресторана
+        if update_data:
+            success = await db.patch(
+                "restaurants",
+                filters={"id": f"eq.{restaurant_id}"},
+                data=update_data
+            )
+            
+            if not success:
+                raise HTTPException(status_code=400, detail="Ошибка обновления ресторана")
+            
+            print(f"✅ Restaurant updated: {update_data.keys()}")
+        
+        # Обновляем таймслот (скидку и время)
+        if discount is not None or time_start is not None or time_end is not None or valid_from is not None or valid_to is not None or max_tables is not None:
+            timeslots = await db.get(
+                "discount_rules",
+                filters={"restaurant_id": f"eq.{restaurant_id}"},
+                limit=1
+            )
+            
+            timeslot_data = {}
+            if discount is not None:
+                timeslot_data["discount_percentage"] = int(discount)
+            if time_start is not None:
+                timeslot_data["start_time"] = time_start
+            if time_end is not None:
+                timeslot_data["end_time"] = time_end
+            if valid_from is not None:
+                timeslot_data["valid_from"] = valid_from
+            if valid_to is not None:
+                timeslot_data["valid_to"] = valid_to
+            if max_tables is not None:
+                timeslot_data["max_tables"] = int(max_tables)
+            
+            if timeslots and timeslot_data:
+                ts_id = timeslots[0]["id"]
+                await db.patch(
+                    "discount_rules",
+                    filters={"id": f"eq.{ts_id}"},
+                    data=timeslot_data
+                )
+                print(f"✅ Timeslot updated: {timeslot_data.keys()}")
+        
         invalidate_cache(restaurant_id)
+        
+        print(f"🎉 Restaurant {restaurant_id} updated successfully\n")
         return {
             "success": True,
-            "message": f"Ресторан '{data.get('name', '')}' успешно обновлён"
+            "message": f"Ресторан успешно обновлён"
         }
     
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"❌ Update restaurant error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
+# === ↑↑↑ КОНЕЦ ИСПРАВЛЕННОГО PUT ENDPOINT ↑↑↑ ===
 
 
 @router.delete("/{restaurant_id}")
@@ -470,12 +648,13 @@ async def search_restaurants(
     discount_min: Optional[int] = None,
     avg_check_min: Optional[int] = None,
     avg_check_max: Optional[int] = None,
-    category: Optional[str] = None
+    category: Optional[str] = None,
+    city: Optional[str] = None
 ):
     """
     Search and filter restaurants
     """
-    restaurants = await restaurant_service.get_all(category=category)
+    restaurants = await restaurant_service.get_all(category=category, city=city)
     
     if cuisine:
         restaurants = [r for r in restaurants if cuisine in r.get("cuisine", [])]

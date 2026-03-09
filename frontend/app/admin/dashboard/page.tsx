@@ -354,7 +354,7 @@ const fetchCompletedBookings = async () => {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen gap-4">
                 <div className="text-6xl">⚠️</div>
-                <div className="text-2xl font-bold text-red-600">Ошибка загрузки</div>
+                <div className="text-2xl font-bold text-error">Ошибка загрузки</div>
                 <p className="text-muted-foreground max-w-md text-center">{error}</p>
                 <div className="flex gap-2">
                     <Button onClick={fetchData}>Попробовать снова</Button>
@@ -406,7 +406,7 @@ const fetchCompletedBookings = async () => {
                             <div className="text-2xl font-bold">{stats.today_count}</div>
                             <p className="text-xs text-muted-foreground">
                                 {stats.today_count > 0 ? (
-                                    <span className="text-green-600">↑ Активные брони</span>
+                                    <span className="text-success">↑ Активные брони</span>
                                 ) : (
                                     'Нет броней на сегодня'
                                 )}
@@ -446,7 +446,7 @@ const fetchCompletedBookings = async () => {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Подтверждено посещений</CardTitle>
-                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <CheckCircle className="h-4 w-4 text-success" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{completedStats.totalVisits}</div>
@@ -733,7 +733,7 @@ const fetchCompletedBookings = async () => {
                                         <TableCell>
                                             <a
                                                 href={`tel:${booking.guest_phone}`}
-                                                className="text-blue-600 hover:underline"
+                                                className="text-info hover:underline"
                                             >
                                                 {booking.guest_phone || 'Не указан'}
                                             </a>
@@ -778,7 +778,7 @@ const fetchCompletedBookings = async () => {
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => deleteBooking(booking.id)}
-                                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                    className="text-error hover:text-error hover:bg-error-light"
                                                 >
                                                     🗑️ Удалить
                                                 </Button>
