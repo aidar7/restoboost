@@ -38,8 +38,7 @@ import { PageHeader } from '@/components/PageHeader';
 
 
 
-// API URL из переменных окружения
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000/api';
 
 interface Booking {
     id: number;
@@ -82,10 +81,10 @@ export default function DashboardPage() {
     const [error, setError] = useState<string | null>(null);
     const [completedBookings, setCompletedBookings] = useState<Booking[]>([]);
     const [completedStats, setCompletedStats] = useState({
-    totalVisits: 0,
-    totalGuests: 0,
-    avgDiscount: 0
-});
+        totalVisits: 0,
+        totalGuests: 0,
+        avgDiscount: 0
+    });
 
     // Фильтры
     const [filterRestaurant, setFilterRestaurant] = useState('');
@@ -106,11 +105,11 @@ export default function DashboardPage() {
             setLoading(true);
             setError(null);
 
-            console.log('📡 Fetching from:', API_URL);
+            console.log('📡 Fetching from:', API_BASE);
 
             const [bookingsRes, restaurantsRes] = await Promise.all([
-                fetch(`${API_URL}/api/bookings/`),
-                fetch(`${API_URL}/api/restaurants/`)
+                fetch(`${API_BASE}/bookings/`),    // ✅ Обратные кавычки
+                fetch(`${API_BASE}/restaurants/`)   // ✅ Обратные кавычки
             ]);
 
             if (!bookingsRes.ok || !restaurantsRes.ok) {
@@ -119,7 +118,9 @@ export default function DashboardPage() {
 
             let bookingsData = await bookingsRes.json();
             let restaurantsData = await restaurantsRes.json();
-
+            console.log('📦 Bookings data:', bookingsData);
+            console.log('🔍 First booking:', bookingsData[0]);
+            console.log('💰 Discount field:', bookingsData[0]?.discount_applied);
             console.log('📦 Data received:', {
                 bookings: typeof bookingsData,
                 restaurants: typeof restaurantsData
@@ -161,39 +162,53 @@ export default function DashboardPage() {
     };
 
     // НОВАЯ ФУНКЦИЯ ПОСЛЕ fetchData
-const fetchCompletedBookings = async () => {
-    try {
-        const response = await fetch(`${API_URL}/api/bookings/completed`);
-        if (response.ok) {
-            const data = await response.json();
-            setCompletedBookings(data);
-            
-            // Расчёт статистики
-            const visits = data.length;
-            const guests = data.reduce((sum: number, b: Booking) => sum + (b.party_size || 0), 0);
-            const discount = data.reduce((sum: number, b: Booking) => sum + (b.discount_applied || 0), 0) / (visits || 1);
-            
-            setCompletedStats({ totalVisits: visits, totalGuests: guests, avgDiscount: Math.round(discount) });
+    const fetchCompletedBookings = async () => {
+        try {
+            const response = await fetch(`${API_BASE}/bookings/completed`);
+            if (response.ok) {
+                const data = await response.json();
+                setCompletedBookings(data);
+
+                // Расчёт статистики
+                const visits = data.length;
+                const guests = data.reduce((sum: number, b: Booking) => sum + (b.party_size || 0), 0);
+                const discount = data.reduce((sum: number, b: Booking) => sum + (b.discount_applied || 0), 0) / (visits || 1);
+
+                setCompletedStats({ totalVisits: visits, totalGuests: guests, avgDiscount: Math.round(discount) });
+            }
+        } catch (error) {
+            console.error('Error fetching completed bookings:', error);
         }
-    } catch (error) {
-        console.error('Error fetching completed bookings:', error);
-    }
-};
+    };
 
 
     const calculateStats = (bookingsData: Booking[]) => {
-        const today = new Date().toISOString().split('T')[0];
-        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        // ✅ Правильный расчёт даты с учётом временной зоны
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const today = now.toISOString().split('T')[0];
 
-        const todayBookings = bookingsData.filter(b =>
-            b.booking_datetime?.startsWith(today)
-        );
+        console.log('📅 Today date:', today); // Для отладки
+
+        const todayBookings = bookingsData.filter(b => {
+            console.log('Checking:', b.booking_datetime, 'starts with', today);
+            return b.booking_datetime?.startsWith(today);
+        });
+
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
         const weekBookings = bookingsData.filter(b =>
             b.booking_datetime && b.booking_datetime >= weekAgo
         );
 
         const totalGuests = bookingsData.reduce((sum, b) => sum + (b.party_size || 0), 0);
+
+        console.log('✅ Stats calculated:', {
+            total: bookingsData.length,
+            today: todayBookings.length,
+            week: weekBookings.length,
+            guests: totalGuests
+        });
 
         setStats({
             total: bookingsData.length,
@@ -202,6 +217,7 @@ const fetchCompletedBookings = async () => {
             total_guests: totalGuests
         });
     };
+
 
     // 📊 Данные для графика "Брони за последние 7 дней"
     const getBookingsByDayData = () => {
@@ -274,7 +290,7 @@ const fetchCompletedBookings = async () => {
 
     const updateStatus = async (bookingId: number, newStatus: string) => {
         try {
-            const response = await fetch(`${API_URL}/api/bookings/${bookingId}/status`, {
+            const response = await fetch(`${API_BASE}/api/bookings/${bookingId}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
@@ -297,9 +313,10 @@ const fetchCompletedBookings = async () => {
         if (!confirm('Вы уверены, что хотите удалить эту бронь?')) return;
 
         try {
-            const response = await fetch(`${API_URL}/api/bookings/${bookingId}`, {
+            const response = await fetch(`${API_BASE}/bookings/${bookingId}`, {
                 method: 'DELETE'
             });
+
 
             if (response.ok) {
                 setBookings(prev => prev.filter(b => b.id !== bookingId));
@@ -367,14 +384,14 @@ const fetchCompletedBookings = async () => {
     }
 
     return (
-    <PageHeader
-        title="Аналитика дашборда"
-        breadcrumbs={[
-            { label: 'Админ', href: '/admin' },
-            { label: 'Дашборд' },
-        ]}
-    >
-    {/* твои карточки KPI */}
+        <PageHeader
+            title="Аналитика дашборда"
+            breadcrumbs={[
+                { label: 'Админ', href: '/admin' },
+                { label: 'Дашборд' },
+            ]}
+        >
+            {/* твои карточки KPI */}
 
 
             <main className="flex flex-1 flex-col gap-4 p-4 sm:px-6 sm:py-6 md:gap-8">
@@ -481,135 +498,135 @@ const fetchCompletedBookings = async () => {
 
                 {/* Charts Row - как в shadcn dashboard */}
                 <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-                {/* Брони за 7 дней - занимает 3 колонки из 4 */}
-                <Card className="lg:col-span-3">
-                    <CardHeader>
-                    <CardTitle>Брони за последние 7 дней</CardTitle>
-                    <CardDescription>
-                        Динамика бронирований и количества гостей
-                    </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pl-2">
-                    <ChartContainer
-                        config={{
-                        bookings: {
-                            label: "Броней",
-                            color: "var(--chart-1)",  // Другой цвет из палитры
-                        },
-                        guests: {
-                            label: "Гостей",
-                            color: "oklch(var(--chart-4))",
-                        },
-                        }}
-                        className="aspect-auto h-[250px] w-full"
-                    >
-                        <AreaChart data={getBookingsByDayData()}>
-                        <defs>
-                            <linearGradient id="fillBookings" x1="0" y1="0" x2="0" y2="1">
-                            <stop
-                                offset="5%"
-                                stopColor="var(--color-bookings)"
-                                stopOpacity={0.8}
-                            />
-                            <stop
-                                offset="95%"
-                                stopColor="var(--color-bookings)"
-                                stopOpacity={0.1}
-                            />
-                            </linearGradient>
-                            <linearGradient id="fillGuests" x1="0" y1="0" x2="0" y2="1">
-                            <stop
-                                offset="5%"
-                                stopColor="var(--color-guests)"
-                                stopOpacity={0.8}
-                            />
-                            <stop
-                                offset="95%"
-                                stopColor="var(--color-guests)"
-                                stopOpacity={0.1}
-                            />
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid vertical={false} />
-                        <XAxis
-                            dataKey="date"
-                            tickLine={false}
-                            axisLine={false}
-                            tickMargin={8}
-                            minTickGap={32}
-                        />
-                        <ChartTooltip
-                            cursor={false}
-                            content={(props: any) => <ChartTooltipContent {...props} indicator="dot" />}
-                        />
-                        <Area
-                            dataKey="guests"
-                            type="natural"
-                            fill="url(#fillGuests)"
-                            fillOpacity={0.4}
-                            stroke="var(--color-guests)"
-                            stackId="a"
-                        />
-                        <Area
-                            dataKey="bookings"
-                            type="natural"
-                            fill="url(#fillBookings)"
-                            fillOpacity={0.4}
-                            stroke="var(--color-bookings)"
-                            stackId="a"
-                        />
-                        </AreaChart>
-                    </ChartContainer>
-                    </CardContent>
-                </Card>
+                    {/* Брони за 7 дней - занимает 3 колонки из 4 */}
+                    <Card className="lg:col-span-3">
+                        <CardHeader>
+                            <CardTitle>Брони за последние 7 дней</CardTitle>
+                            <CardDescription>
+                                Динамика бронирований и количества гостей
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pl-2">
+                            <ChartContainer
+                                config={{
+                                    bookings: {
+                                        label: "Броней",
+                                        color: "var(--chart-1)",  // Другой цвет из палитры
+                                    },
+                                    guests: {
+                                        label: "Гостей",
+                                        color: "oklch(var(--chart-4))",
+                                    },
+                                }}
+                                className="aspect-auto h-[250px] w-full"
+                            >
+                                <AreaChart data={getBookingsByDayData()}>
+                                    <defs>
+                                        <linearGradient id="fillBookings" x1="0" y1="0" x2="0" y2="1">
+                                            <stop
+                                                offset="5%"
+                                                stopColor="var(--color-bookings)"
+                                                stopOpacity={0.8}
+                                            />
+                                            <stop
+                                                offset="95%"
+                                                stopColor="var(--color-bookings)"
+                                                stopOpacity={0.1}
+                                            />
+                                        </linearGradient>
+                                        <linearGradient id="fillGuests" x1="0" y1="0" x2="0" y2="1">
+                                            <stop
+                                                offset="5%"
+                                                stopColor="var(--color-guests)"
+                                                stopOpacity={0.8}
+                                            />
+                                            <stop
+                                                offset="95%"
+                                                stopColor="var(--color-guests)"
+                                                stopOpacity={0.1}
+                                            />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis
+                                        dataKey="date"
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickMargin={8}
+                                        minTickGap={32}
+                                    />
+                                    <ChartTooltip
+                                        cursor={false}
+                                        content={(props: any) => <ChartTooltipContent {...props} indicator="dot" />}
+                                    />
+                                    <Area
+                                        dataKey="guests"
+                                        type="natural"
+                                        fill="url(#fillGuests)"
+                                        fillOpacity={0.4}
+                                        stroke="var(--color-guests)"
+                                        stackId="a"
+                                    />
+                                    <Area
+                                        dataKey="bookings"
+                                        type="natural"
+                                        fill="url(#fillBookings)"
+                                        fillOpacity={0.4}
+                                        stroke="var(--color-bookings)"
+                                        stackId="a"
+                                    />
+                                </AreaChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
 
-                {/* Топ ресторанов - занимает 1 колонку */}
-                <Card className="lg:col-span-1">
-                    <CardHeader>
-                    <CardTitle>Топ рестораны</CardTitle>
-                    <CardDescription>
-                        По количеству броней
-                    </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                    <ChartContainer
-                        config={{
-                        bookings: {
-                            label: "Броней",
-                            color: "hsl(var(--chart-1))",
-                        },
-                        }}
-                        className="aspect-auto h-[250px] w-full"
-                    >
-                        <BarChart
-                        data={getTopRestaurantsData()}
-                        layout="vertical"
-                        margin={{
-                            left: 0,
-                        }}
-                        >
-                        <YAxis
-                            dataKey="name"
-                            type="category"
-                            tickLine={false}
-                            tickMargin={10}
-                            axisLine={false}
-                            tickFormatter={(value) => value.slice(0, 15)}
-                        />
-                        <XAxis type="number" hide />
-                        <ChartTooltip
-                            cursor={false}
-                            content={(props: any) => <ChartTooltipContent {...props} hideLabel />}
-                        />
-                        <Bar 
-                            dataKey="bookings" 
-                            fill="var(--color-bookings)" 
-                            radius={5}
-                        />
-                        </BarChart>
-                    </ChartContainer>
-                    </CardContent>
-                </Card>
+                    {/* Топ ресторанов - занимает 1 колонку */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>Топ рестораны</CardTitle>
+                            <CardDescription>
+                                По количеству броней
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer
+                                config={{
+                                    bookings: {
+                                        label: "Броней",
+                                        color: "hsl(var(--chart-1))",
+                                    },
+                                }}
+                                className="aspect-auto h-[250px] w-full"
+                            >
+                                <BarChart
+                                    data={getTopRestaurantsData()}
+                                    layout="vertical"
+                                    margin={{
+                                        left: 0,
+                                    }}
+                                >
+                                    <YAxis
+                                        dataKey="name"
+                                        type="category"
+                                        tickLine={false}
+                                        tickMargin={10}
+                                        axisLine={false}
+                                        tickFormatter={(value) => value.slice(0, 15)}
+                                    />
+                                    <XAxis type="number" hide />
+                                    <ChartTooltip
+                                        cursor={false}
+                                        content={(props: any) => <ChartTooltipContent {...props} hideLabel />}
+                                    />
+                                    <Bar
+                                        dataKey="bookings"
+                                        fill="var(--color-bookings)"
+                                        radius={5}
+                                    />
+                                </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
                 </div>
 
 

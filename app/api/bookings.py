@@ -361,6 +361,11 @@ async def get_bookings(
         )
         
         print(f"✅ Bookings loaded: {len(bookings)}")
+        # ✅ ДОБАВЬ ЭТО - убедись что discount_applied есть в каждой брони
+        for booking in bookings:
+            if 'discount_applied' not in booking:
+                booking['discount_applied'] = 0
+            print(f"  Бронь #{booking.get('id')}: скидка {booking.get('discount_applied')}%")
         
         # ✅ ИСПРАВЛЕНИЕ: Возвращаем массив напрямую
         return bookings  # НЕ {"count": ..., "bookings": ...}

@@ -886,8 +886,8 @@ export default function AdminRestaurantEditPage() {
                             setEditingDiscount(discount);
                             setDiscountForm({
                               discount: String(discount.discount),
-                              time_start: discount.time_start,
-                              time_end: discount.time_end,
+                              time_start: discount.time_start.substring(0, 5),  // ← Только HH:MM
+                              time_end: discount.time_end.substring(0, 5),      // ← Только HH:MM
                               valid_from: discount.valid_from,
                               valid_to: discount.valid_to,
                               description: discount.description || 'на все меню',
