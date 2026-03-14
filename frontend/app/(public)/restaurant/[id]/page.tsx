@@ -6,19 +6,14 @@ import { API_BASE } from '@/lib/config';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Breadcrumbs } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
-import { Loader2, AlertCircle } from 'lucide-react';
-
-
-// shadcn tabs (обычно: '@/components/ui/tabs')
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-import { ChevronLeft, MapPin, Share2, Heart, ChevronRight, X } from 'lucide-react';
+import { Loader2, AlertCircle, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { RestaurantInfoCard } from '@/components/RestaurantInfoCard';
 
 interface Restaurant {
   id: number;
@@ -40,16 +35,26 @@ interface Timeslot {
   capacity: number;
 }
 
-const API_BASE_URL = 'https://restoboost.onrender.com';
+type TabValue = 'main' | 'details' | 'reviews';
 
+function formatShortDate(dateStr: string): string {
+  const date = new Date(dateStr + 'T00:00:00');
+  const days = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  const day = days[date.getDay()];
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  return `${day} ${dd}.${mm}`;
+}
+
+function addDays(dateStr: string, n: number): string {
+  const date = new Date(dateStr + 'T00:00:00');
+  date.setDate(date.getDate() + n);
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 10);
+}
 
 function Lightbox({
-  open,
-  photos,
-  currentPhotoIndex,
-  onClose,
-  onPrev,
-  onNext,
+  open, photos, currentPhotoIndex, onClose, onPrev, onNext,
 }: {
   open: boolean;
   photos: string[];
@@ -59,19 +64,12 @@ function Lightbox({
   onNext: () => void;
 }) {
   if (!open) return null;
-
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
       <button onClick={onClose} className="absolute top-4 right-4 text-white" type="button">
         <X className="w-8 h-8" />
       </button>
-
-      <img
-        src={photos[currentPhotoIndex]}
-        alt="Full size"
-        className="max-w-5xl max-h-[90vh] object-contain"
-      />
-
+      <img src={photos[currentPhotoIndex]} alt="Full size" className="max-w-5xl max-h-[90vh] object-contain" />
       <button onClick={onPrev} className="absolute left-4 text-white" type="button">
         <ChevronLeft className="w-9 h-9" />
       </button>
@@ -82,63 +80,86 @@ function Lightbox({
   );
 }
 
+// STEP 2 — компонент таймслота
+function TimeslotButton({
+  slot,
+  selected,
+  onSelect,
+}: {
+  slot: Timeslot;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={!slot.available}
+      onClick={onSelect}
+      className={[
+        'flex-shrink-0 snap-start w-[72px] flex flex-col items-center rounded-xl border-2 transition-all pt-1.5 pb-2 px-1',
+        !slot.available
+          ? 'bg-muted text-muted-foreground cursor-not-allowed opacity-50 border-border'
+          : selected
+            ? 'bg-green-600 text-white border-green-600'
+            : 'border-border hover:border-green-600 bg-background',
+      ].join(' ')}
+    >
+      {/* Бейдж скидки */}
+      <div className="h-5 flex items-center justify-center mb-0.5">
+        {slot.discount > 0 && (
+          <span
+            className={[
+              'text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap',
+              selected ? 'bg-white text-green-700' : 'bg-green-600 text-white',
+            ].join(' ')}
+          >
+            -{slot.discount}%
+          </span>
+        )}
+      </div>
+
+      {/* Время */}
+      <div className="text-sm font-semibold leading-none">
+        {slot.time}
+      </div>
+
+      {/* Подпись */}
+      {slot.discount > 0 && (
+        <div
+          className={[
+            'text-[9px] leading-tight text-center mt-1',
+            selected ? 'text-green-100' : 'text-muted-foreground',
+          ].join(' ')}
+        >
+          Скидка на всё меню
+        </div>
+      )}
+    </button>
+  );
+}
+
 function HeroGallery({
-  photos,
-  onOpen,
-  onPick,
+  photos, onOpen,
 }: {
   photos: string[];
   onOpen: (index: number) => void;
   onPick: (index: number) => void;
 }) {
   if (!photos?.length) return null;
-
   const main = photos[0];
   const rest = photos.slice(1, 5);
-
   return (
-    <div className="mt-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <button
-          type="button"
-          onClick={() => onOpen(0)}
-          className="md:col-span-2 rounded-xl overflow-hidden border border-border bg-card"
-        >
-          <img src={main} alt="" className="h-72 md:h-80 w-full object-cover" />
-        </button>
-
-        <div className="md:col-span-2 grid grid-cols-2 gap-3">
-          {rest.map((p, idx) => {
-            const realIdx = idx + 1;
-            return (
-              <button
-                key={p + idx}
-                type="button"
-                onClick={() => onOpen(realIdx)}
-                className="rounded-xl overflow-hidden border border-border bg-card"
-              >
-                <img src={p} alt="" className="h-36 md:h-[156px] w-full object-cover" />
-              </button>
-            );
-          })}
-        </div>
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <button type="button" onClick={() => onOpen(0)} className="md:col-span-2 rounded-xl overflow-hidden border border-border bg-card">
+        <img src={main} alt="" className="h-72 md:h-80 w-full object-cover" />
+      </button>
+      <div className="md:col-span-2 grid grid-cols-2 gap-3">
+        {rest.map((p, idx) => (
+          <button key={`photo-${idx}`} type="button" onClick={() => onOpen(idx + 1)} className="rounded-xl overflow-hidden border border-border bg-card">
+            <img src={p} alt="" className="h-36 md:h-[156px] w-full object-cover" />
+          </button>
+        ))}
       </div>
-
-      {/* мини-ряд превью (опционально) */}
-      {photos.length > 5 && (
-        <div className="flex gap-2 overflow-x-auto mt-3">
-          {photos.map((p, i) => (
-            <button
-              key={p + i}
-              type="button"
-              onClick={() => onPick(i)}
-              className="w-16 h-16 rounded-lg overflow-hidden border border-border flex-shrink-0"
-            >
-              <img src={p} alt="" className="w-full h-full object-cover" />
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -151,13 +172,11 @@ export default function RestaurantDetail() {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<TabValue>('main');
 
-  // Tabs
-  const [tab, setTab] = useState<'main' | 'details' | 'reviews'>('main');
-
-  // booking
   const [selectedDate, setSelectedDate] = useState('');
   const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedDiscount, setSelectedDiscount] = useState(0);
 
@@ -171,11 +190,17 @@ export default function RestaurantDetail() {
 
   const [bookingResult, setBookingResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // gallery
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  useEffect(() => {
+    const today = new Date();
+    today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+    setSelectedDate(today.toISOString().slice(0, 10));
+  }, []);
 
   const minDate = useMemo(() => {
     const now = new Date();
@@ -184,87 +209,59 @@ export default function RestaurantDetail() {
   }, []);
 
 
+
   useEffect(() => {
-    if (!restaurantId) {
-      // Если ID нет, убедимся, что мы не в состоянии вечной загрузки.
-      setLoading(false);
-      return;
-    }
-
+    if (!restaurantId) { setLoading(false); return; }
     const controller = new AbortController();
-
-    const loadRestaurant = async () => {
-      // ИЗМЕНЕНИЕ 1: Сбрасываем все состояния перед новым запросом.
-      // Это гарантирует, что мы не показываем старые данные или ошибки.
-      setRestaurant(null);
-      setError(null);
-      setLoading(true);
-
+    const load = async () => {
+      setRestaurant(null); setError(null); setLoading(true);
       try {
         const res = await fetch(`${API_BASE}/api/restaurants/${restaurantId}`, {
-          signal: controller.signal,
-          cache: 'no-store',
+          signal: controller.signal, cache: 'no-store',
         });
-
-        if (!res.ok) {
-          // Если ответ не ОК, это ошибка.
-          throw new Error(`Ошибка сети: ${res.status}`);
-        }
-
-        const data = await res.json();
-        // ИЗМЕНЕНИЕ 2: Устанавливаем данные и СРАЗУ ЖЕ выключаем загрузку.
-        // Это атомарная операция, которая предотвращает гонку состояний.
-        setRestaurant(data);
+        if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
+        setRestaurant(await res.json());
         setLoading(false);
-
       } catch (e: any) {
-        if (e?.name === 'AbortError') {
-          console.log('Запрос отменен');
-          return;
-        }
-        // Если произошла ошибка, устанавливаем ошибку и выключаем загрузку.
+        if (e?.name === 'AbortError') return;
         setError('Не удалось загрузить данные ресторана.');
         setLoading(false);
       }
-      // Блок finally нам больше не нужен, так как мы управляем setLoading в try/catch.
     };
-
-    loadRestaurant();
-
-    return () => {
-      controller.abort();
-    };
+    load();
+    return () => controller.abort();
   }, [restaurantId]);
 
   useEffect(() => {
-    if (!restaurantId || !selectedDate) {
-      setTimeslots([]);
-      return;
-    }
-
+    if (!restaurantId || !selectedDate) { setTimeslots([]); return; }
     const controller = new AbortController();
-
-    const loadTimeslots = async () => {
+    const load = async () => {
+      setSlotsLoading(true);
       try {
         const res = await fetch(
           `${API_BASE}/api/bookings/available-slots?restaurant_id=${restaurantId}&date=${selectedDate}`,
           { signal: controller.signal }
         );
-        if (!res.ok) throw new Error('Failed to load timeslots');
-        const data = await res.json();
-        setTimeslots(data);
-        setSelectedTime('');
-        setSelectedDiscount(0);
+        if (!res.ok) throw new Error('Failed');
+        setTimeslots(await res.json());
       } catch (e: any) {
         if (e?.name === 'AbortError') return;
         setTimeslots([]);
+      } finally {
+        setSlotsLoading(false);
       }
     };
-
-    loadTimeslots();
+    load();
     return () => controller.abort();
   }, [restaurantId, selectedDate]);
 
+
+  // STEP 1 — единая функция смены даты
+  const changeDate = (newDate: string) => {
+    setSelectedDate(newDate)
+    setSelectedTime('')
+    setSelectedDiscount(0)
+  }
   const handleSelectTimeslot = (time: string) => {
     const slot = timeslots.find((s) => s.time === time);
     if (!slot || !slot.available) return;
@@ -277,23 +274,20 @@ export default function RestaurantDetail() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!restaurantId || !selectedDate || !selectedTime) {
       setBookingResult({ success: false, message: 'Заполните все поля' });
       return;
     }
-
     try {
       setIsSubmitting(true);
-      const res = await fetch(`${API_BASE_URL}/api/bookings`, {
+      const res = await fetch(`${API_BASE}/api/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           restaurant_id: String(restaurantId),
-          restaurant_name: restaurant?.name || 'Demo',
+          restaurant_name: restaurant?.name || '',
           booking_datetime: `${selectedDate}T${selectedTime}:00`,
           party_size: formData.party_size,
           guest_name: formData.guest_name,
@@ -302,324 +296,411 @@ export default function RestaurantDetail() {
           special_requests: formData.special_requests,
         }),
       });
-
-      console.log('Status:', res.status);
-      console.log('StatusText:', res.statusText);
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.log('Error details:', errorText);
-        throw new Error(`Booking failed: ${errorText}`);
-      }
-
+      if (!res.ok) throw new Error(await res.text());
       const result = await res.json();
-
-      if (result.success && result.data) {
-        const bookingId = result.data.id;
-        const confirmationCode = result.data.confirmation_code;
-
-        console.log('DEBUG: bookingId =', bookingId, 'confirmationCode =', confirmationCode);
-
-        if (bookingId && confirmationCode) {
-          // Редирект на страницу подтверждения
-          router.push(`/booking-confirmation?booking_id=${bookingId}&code=${confirmationCode}`);
-        }
+      if (result.success && result.data?.id && result.data?.confirmation_code) {
+        router.push(`/booking-confirmation?booking_id=${result.data.id}&code=${result.data.confirmation_code}`);
       } else {
-        // Ошибка
         setBookingResult({ success: false, message: result.message || 'Ошибка бронирования' });
       }
-
     } catch (e) {
-      setBookingResult({ success: false, message: e instanceof Error ? e.message : 'Ошибка бронирования' });
+      setBookingResult({ success: false, message: e instanceof Error ? e.message : 'Ошибка' });
     } finally {
       setIsSubmitting(false);
     }
   };
-
-
-  // ↓↓↓ ВСТАВЬТЕ ЭТОТ КОД НА МЕСТО СТАРОГО ↓↓↓
-
-  // 1. Сначала показываем загрузчик, если loading=true ИЛИ ID еще не определился.
-  if (loading || !restaurantId) {
-    return <div className="min-h-screen flex items-center justify-center">Загрузка...</div>;
-  }
-
-  // 2. Теперь, когда загрузка точно завершена, проверяем на ошибки.
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="p-8 max-w-md">
-          <h2 className="text-xl font-bold text-destructive mb-2">Ошибка</h2>
-          <p>{error}</p>
-          <Button className="mt-4 w-full" onClick={() => router.push('/')}>
-            Главная
-          </Button>
-        </Card>
-      </div>
-    );
-  }
-
-  // 3. И только теперь, если нет ни загрузки, ни ошибки, но ресторана нет - он не найден.
-  if (!restaurant) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="p-8 max-w-md">
-          <h2 className="text-xl font-bold text-destructive mb-2">Ошибка</h2>
-          <p>Ресторан не найден</p>
-          <Button className="mt-4 w-full" onClick={() => router.push('/')}>
-            Главная
-          </Button>
-        </Card>
-      </div>
-    );
-  }
-
-  // ↑↑↑ КОНЕЦ БЛОКА ДЛЯ ЗАМЕНЫ ↑↑↑
-
 
   const openLightbox = (index: number) => {
     setCurrentPhotoIndex(index);
     setShowLightbox(true);
   };
 
+  const scrollSlots = useCallback((direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const scrollAmount = direction === 'left' ? -200 : 200;
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  }, []);
+
+  const checkScrollability = useCallback(() => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5);
+    }
+  }, []);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      checkScrollability();
+      container.addEventListener('scroll', checkScrollability);
+      window.addEventListener('resize', checkScrollability);
+
+      return () => {
+        container.removeEventListener('scroll', checkScrollability);
+        window.removeEventListener('resize', checkScrollability);
+      };
+    }
+  }, [checkScrollability, timeslots]);
+
+  if (loading || !restaurantId) {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+  }
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="p-8 max-w-md">
+          <div className="flex items-center gap-2 text-destructive mb-4"><AlertCircle className="w-5 h-5" /><h2 className="text-xl font-bold">Ошибка</h2></div>
+          <p>{error}</p>
+          <Button className="mt-4 w-full" onClick={() => router.push('/')}>Главная</Button>
+        </Card>
+      </div>
+    );
+  }
+  if (!restaurant) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="p-8 max-w-md">
+          <h2 className="text-xl font-bold text-destructive mb-2">Ресторан не найден</h2>
+          <Button className="mt-4 w-full" onClick={() => router.push('/')}>Главная</Button>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
+    <div className="max-w-7xl mx-auto px-4 py-6">
       <PageHeader
         title={restaurant.name}
-        breadcrumbs={[
-          { label: 'Рестораны', href: '/' },
-          { label: restaurant.name },
-        ]}
+        breadcrumbs={[{ label: 'Рестораны', href: '/' }, { label: restaurant.name }]}
         rating={restaurant.rating}
         address={restaurant.address}
         avgCheck={restaurant.avg_check}
         cuisine={restaurant.cuisine}
-      >
+      />
 
+      {/* Основная сетка: 2/3 - контент, 1/3 - форма бронирования */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
 
-        <div className="max-w-6xl mx-auto px-4 py-6">
-
-
-
-          {/* PHOTOS under hero */}
+        {/* Левая колонка - контент (2/3) */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Галерея */}
           <HeroGallery
             photos={restaurant.photos}
             onOpen={openLightbox}
             onPick={(i) => setCurrentPhotoIndex(i)}
           />
 
+          {/* Табы под галереей */}
+          <Tabs value={tab} onValueChange={(v) => setTab(v as TabValue)} className="w-full">
+            <TabsList className="w-full justify-start">
+              <TabsTrigger value="main">О ресторане</TabsTrigger>
+              <TabsTrigger value="reviews">Отзывы</TabsTrigger>
+            </TabsList>
 
-          {/* TABS (3 sections) */}
-          <div className="mt-8">
-            <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
-              <TabsList className="w-full justify-start">
-                <TabsTrigger value="main">Основная</TabsTrigger>
-                <TabsTrigger value="details">Детали</TabsTrigger>
-                <TabsTrigger value="reviews">Отзывы</TabsTrigger>
-              </TabsList>
+            {/* Объединённый таб: Информация + Описание */}
+            <TabsContent value="main" className="mt-6">
+              <div className="space-y-6">
+                {/* Информация (бэйджи) */}
+                <div>
+                  <h2 className="text-lg font-bold mb-4">Информация</h2>
+                  <RestaurantInfoCard restaurant={restaurant} />
+                </div>
 
-              {/* TAB 1: Main (menu + booking + location — по желанию) */}
-              <TabsContent value="main" className="mt-6 space-y-6">
-                <Card className="p-6">
-                  <h2 className="text-xl font-bold mb-2">Информация</h2>
-                  <div className="text-muted-foreground">
-                    <div>{restaurant.address}</div>
-                    <div className="mt-2">Телефон: {restaurant.phone}</div>
-                  </div>
-                </Card>
-                <Card className="p-6">
-                  <h2 className="text-2xl font-bold mb-4">Бронирование</h2>
-
-                  {bookingResult && (
-                    <div
-                      className={[
-                        'p-4 rounded-lg mb-4',
-                        bookingResult.success ? 'bg-success-light text-success' : 'bg-error-light text-error',
-                      ].join(' ')}
-                    >
-                      {bookingResult.message}
-                    </div>
-                  )}
-
-                  <form onSubmit={handleSubmitBooking} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold mb-2">
-                          Дата <span className="text-destructive">*</span>
-                        </label>
-                        <Input
-                          type="date"
-                          value={selectedDate}
-                          onChange={(e) => setSelectedDate(e.target.value)}
-                          min={minDate}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold mb-2">
-                          Гостей <span className="text-destructive">*</span>
-                        </label>
-                        <Select
-                          value={formData.party_size}
-                          onValueChange={(value) => setFormData({ ...formData, party_size: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
-                              <SelectItem key={num} value={String(num)}>
-                                {num} {num === 1 ? 'гость' : 'гостей'}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold mb-2">
-                          Время <span className="text-destructive">*</span>
-                        </label>
-                        <Input value={selectedTime || 'Выберите слот ниже'} readOnly />
-                      </div>
-                    </div>
-
-                    {selectedDate && (
-                      <div>
-                        <label className="block text-sm font-semibold mb-3">
-                          Выберите время <span className="text-destructive">*</span>
-                        </label>
-
-                        {timeslots.length === 0 ? (
-                          <div className="text-center py-6 text-muted-foreground text-sm">❌ Нет доступных слотов</div>
-                        ) : (
-                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                            {timeslots.map((slot) => (
-                              <button
-                                key={slot.time}
-                                type="button"
-                                disabled={!slot.available}
-                                onClick={() => handleSelectTimeslot(slot.time)}
-                                className={[
-                                  'p-3 rounded-lg border-2 transition-all text-sm font-medium text-center',
-                                  selectedTime === slot.time
-                                    ? 'bg-booking text-white border-booking'
-                                    : 'border-border hover:border-booking',
-                                  !slot.available ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-background',
-                                ].join(' ')}
-                              >
-                                <div className="font-semibold">{slot.time}</div>
-                                {slot.discount > 0 && <div className="text-xs mt-1">-{slot.discount}%</div>}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold mb-2">
-                          Ваше имя <span className="text-destructive">*</span>
-                        </label>
-                        <Input
-                          type="text"
-                          name="guest_name"
-                          value={formData.guest_name}
-                          onChange={handleFormChange}
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold mb-2">
-                          Телефон <span className="text-destructive">*</span>
-                        </label>
-                        <Input
-                          type="tel"
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleFormChange}
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold mb-2">Email</label>
-                        <Input
-                          type="email"
-                          name="guest_email"
-                          value={formData.guest_email}
-                          onChange={handleFormChange}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold mb-2">Пожелания</label>
-                        <Textarea
-                          name="special_requests"
-                          value={formData.special_requests}
-                          onChange={handleFormChange}
-                          rows={3}
-                        />
-                      </div>
-                    </div>
-
-                    <Button
-                      type="submit"
-                      disabled={!selectedDate || !selectedTime || !formData.guest_name || !formData.phone || isSubmitting}
-                      className="w-full mt-auto bg-booking hover:bg-booking-hover text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-                    >
-                      {isSubmitting ? 'Бронирование...' : 'Забронировать'}
-                    </Button>
-
-                    {selectedDiscount > 0 && (
-                      <div className="text-center text-sm text-success font-semibold">
-                        Скидка {selectedDiscount}% на это время
-                      </div>
-                    )}
-                  </form>
-                </Card>
-              </TabsContent>
-
-              {/* TAB 2: Details */}
-              <TabsContent value="details" className="mt-6 space-y-6">
-                <Card className="p-6">
-                  <h2 className="text-xl font-bold mb-2">О ресторане</h2>
-                  {restaurant.description ? (
-                    <p className="text-muted-foreground">{restaurant.description}</p>
-                  ) : (
-                    <p className="text-muted-foreground">
-                      Добавь текст: концепция, часы работы, парковка, условия, кухня, языки персонала.
+                {/* Описание ресторана */}
+                {restaurant.description && (
+                  <Card className="p-6">
+                    <h2 className="text-lg font-bold mb-4">О ресторане</h2>
+                    <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                      {restaurant.description}
                     </p>
-                  )}
-                </Card>
-              </TabsContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
 
-              {/* TAB 3: Reviews */}
-              <TabsContent value="reviews" className="mt-6 space-y-6">
-                <Card className="p-6">
-                  <h2 className="text-xl font-bold mb-2">Отзывы</h2>
-                  <p className="text-muted-foreground">
-                    Здесь: рейтинг, breakdown (еда/сервис/атмосфера) + список отзывов.
-                  </p>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
+            {/* Отзывы */}
+            <TabsContent value="reviews" className="mt-6">
+              <Card className="p-6">
+                <h2 className="text-lg font-bold mb-4">Отзывы</h2>
+                <p className="text-muted-foreground">Здесь будут отзывы посетителей.</p>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
         </div>
 
-        <Lightbox
-          open={showLightbox}
-          photos={restaurant.photos}
-          currentPhotoIndex={currentPhotoIndex}
-          onClose={() => setShowLightbox(false)}
-          onPrev={() =>
-            setCurrentPhotoIndex((prev) => (prev - 1 + restaurant.photos.length) % restaurant.photos.length)
-          }
-          onNext={() => setCurrentPhotoIndex((prev) => (prev + 1) % restaurant.photos.length)}
-        />
-      </PageHeader>
+        {/* Правая колонка — форма бронирования (1/3) */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-20 max-h-[calc(100vh-5rem)] overflow-y-auto bg-card border border-border rounded-xl p-6 shadow-lg">
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold">Забронировать столик</h3>
+              <p className="text-sm text-green-600 font-semibold mt-1">со скидкой до -50%</p>
+            </div>
+
+            <form onSubmit={handleSubmitBooking} id="booking-form" className="space-y-5">
+
+              {/* Дата + Гости */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Дата</label>
+                  <div className="relative">
+                    <Input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => changeDate(e.target.value)}
+                      min={minDate}
+                      className="w-full pr-8 text-sm font-medium"
+                    />
+                    {selectedDate && (
+                      <button type="button" onClick={() => changeDate('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Кол-во гостей</label>
+                  <Select value={formData.party_size} onValueChange={(v) => setFormData({ ...formData, party_size: v })}>
+                    <SelectTrigger className="text-sm font-medium"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n} {n === 1 ? 'гость' : n < 5 ? 'гостя' : 'гостей'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Временные слоты */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-medium">Выберите время</label>
+                  {timeslots.length > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {timeslots.filter(s => s.available).length} доступно
+                    </span>
+                  )}
+                </div>
+
+                <div className="relative">
+                  {/* Левый градиент (появляется когда можно скроллить влево) */}
+                  <div className={`
+      absolute left-0 top-0 bottom-0 w-8 pointer-events-none z-10
+      bg-gradient-to-r from-background via-background/80 to-transparent
+      transition-opacity duration-200
+      ${canScrollLeft ? 'opacity-100' : 'opacity-0'}
+    `} />
+
+                  {/* Правый градиент (появляется когда можно скроллить вправо) */}
+                  <div className={`
+      absolute right-0 top-0 bottom-0 w-8 pointer-events-none z-10
+      bg-gradient-to-l from-background via-background/80 to-transparent
+      transition-opacity duration-200
+      ${canScrollRight ? 'opacity-100' : 'opacity-0'}
+    `} />
+
+                  {/* Контейнер со слотами и стрелками */}
+                  <div className="flex items-center gap-2">
+                    {/* Стрелка влево - появляется только когда есть куда скроллить */}
+                    <button
+                      type="button"
+                      onClick={() => scrollSlots('left')}
+                      disabled={!canScrollLeft}
+                      className={`
+          flex-shrink-0 p-2 rounded-lg border border-border bg-background
+          hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-950/20
+          transition-all duration-200
+          ${canScrollLeft
+                          ? 'opacity-100 visible'
+                          : 'opacity-0 invisible pointer-events-none'
+                        }
+          disabled:opacity-30 disabled:cursor-not-allowed
+        `}
+                      aria-label="Прокрутить влево"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    {/* Сетка слотов с горизонтальным скроллом */}
+                    <div
+                      ref={scrollContainerRef}
+                      className="flex-1 flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-300 snap-x snap-mandatory scroll-smooth"
+                      style={{
+                        WebkitOverflowScrolling: 'touch', // для плавности на iOS
+                      }}
+                    >
+                      {timeslots.length > 0 ? (
+                        timeslots.map((slot) => (
+                          <button
+                            key={slot.time}
+                            type="button"
+                            disabled={!slot.available}
+                            onClick={() => handleSelectTimeslot(slot.time)}
+                            className={`
+                flex-shrink-0 snap-start w-20
+                flex flex-col items-center rounded-xl border-2 
+                transition-all duration-200 pt-2 pb-2 px-1
+                ${!slot.available
+                                ? 'bg-muted text-muted-foreground cursor-not-allowed opacity-50 border-border'
+                                : selectedTime === slot.time
+                                  ? 'bg-green-600 text-white border-green-600 shadow-lg scale-105'
+                                  : 'border-border hover:border-green-600 hover:shadow-md bg-background'
+                              }
+              `}
+                          >
+                            <div className="h-6 flex items-center justify-center mb-1">
+                              {slot.discount > 0 && (
+                                <span className={`
+                    text-xs font-bold px-2 py-0.5 rounded-full
+                    ${selectedTime === slot.time
+                                    ? 'bg-white text-green-700'
+                                    : 'bg-green-600 text-white'
+                                  }
+                  `}>
+                                  -{slot.discount}%
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-sm font-semibold leading-none">{slot.time}</div>
+                            {slot.discount > 0 && (
+                              <div className={`
+                  text-[9px] text-center mt-1
+                  ${selectedTime === slot.time ? 'text-green-100' : 'text-muted-foreground'}
+                `}>
+                                Скидка
+                              </div>
+                            )}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="flex-1 text-center py-4 text-muted-foreground">
+                          {slotsLoading ? (
+                            <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                          ) : (
+                            'Нет доступных слотов'
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Стрелка вправо - появляется только когда есть куда скроллить */}
+                    <button
+                      type="button"
+                      onClick={() => scrollSlots('right')}
+                      disabled={!canScrollRight}
+                      className={`
+          flex-shrink-0 p-2 rounded-lg border border-border bg-background
+          hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-950/20
+          transition-all duration-200
+          ${canScrollRight
+                          ? 'opacity-100 visible'
+                          : 'opacity-0 invisible pointer-events-none'
+                        }
+          disabled:opacity-30 disabled:cursor-not-allowed
+        `}
+                      aria-label="Прокрутить вправо"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {!slotsLoading && !selectedTime && timeslots.length > 0 && (
+                  <p className="text-xs text-amber-500 mt-3 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Выберите время для бронирования
+                  </p>
+                )}
+              </div>
+
+              {/* Комментарий */}
+              <div>
+                <Textarea
+                  name="special_requests"
+                  value={formData.special_requests}
+                  onChange={handleFormChange}
+                  placeholder="Комментарий к брони (например: столик у окна)"
+                  rows={2}
+                />
+              </div>
+
+              {/* Контакты - компактно */}
+              <div className="space-y-2">
+                <Input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleFormChange}
+                  placeholder="Телефон *"
+                  required
+                />
+                <Input
+                  type="email"
+                  name="guest_email"
+                  value={formData.guest_email}
+                  onChange={handleFormChange}
+                  placeholder="Email"
+                />
+                <Input
+                  type="text"
+                  name="guest_name"
+                  value={formData.guest_name}
+                  onChange={handleFormChange}
+                  placeholder="Ваше имя *"
+                  required
+                />
+              </div>
+
+              {/* Ошибка бронирования */}
+              {bookingResult && !bookingResult.success && (
+                <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                  {bookingResult.message}
+                </div>
+              )}
+
+              {/* Кнопка */}
+              <Button
+                type="submit"
+                disabled={!selectedDate || !selectedTime || !formData.guest_name || !formData.phone || isSubmitting}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-6 text-base rounded-lg"
+              >
+                {isSubmitting ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Бронирование...</>
+                ) : (
+                  'Войти и забронировать столик'
+                )}
+              </Button>
+
+              {/* Скидка */}
+              {selectedDiscount > 0 && (
+                <div className="text-center text-sm text-green-600 font-semibold">
+                  ✅ Скидка {selectedDiscount}% на это время
+                </div>
+              )}
+
+              {/* Приложение */}
+              <div className="pt-4 border-t border-border text-center">
+                <p className="text-xs text-muted-foreground">Еще выгоднее в мобильном приложении</p>
+              </div>
+              </form>
+          </div>
+        </div>
+      </div>
+
+      <Lightbox
+        open={showLightbox}
+        photos={restaurant.photos}
+        currentPhotoIndex={currentPhotoIndex}
+        onClose={() => setShowLightbox(false)}
+        onPrev={() => setCurrentPhotoIndex((p) => (p - 1 + restaurant.photos.length) % restaurant.photos.length)}
+        onNext={() => setCurrentPhotoIndex((p) => (p + 1) % restaurant.photos.length)}
+      />
     </div>
   );
 }

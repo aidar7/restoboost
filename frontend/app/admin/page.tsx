@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 
 
-const API_BASE = 'http://localhost:8000/api';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000/api';
+
 
 type Restaurant = {
   id: number;
@@ -566,16 +568,17 @@ export default function AdminPage() {
                       💰 {r.avg_check} ₸
                     </span>
                   )}
-                  <button className="text-xs px-3 py-1 rounded bg-info-light text-info hover:bg-info/20"
+                  <button
+                    className="px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition font-medium text-sm flex items-center gap-2"
                     onClick={() => router.push(`/admin/restaurants/${r.id}`)}
                   >
-                    Редактировать
+                    ✏️ Редактировать
                   </button>
                   <button
-                    className="text-xs px-3 py-1 rounded bg-error-light text-error hover:bg-error/20"
+                    className="px-4 py-2 rounded-lg bg-error text-white hover:bg-error/90 transition font-medium text-sm flex items-center gap-2"
                     onClick={() => handleDelete(r.id)}
                   >
-                    Удалить
+                    🗑️ Удалить
                   </button>
                 </div>
               </div>
