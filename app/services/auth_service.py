@@ -221,6 +221,87 @@ class AuthService:
         except Exception as e:
             raise Exception(f"Invalid token: {str(e)}")
 
+
+    async def verify_google_token(self, token: str) -> dict:
+        """Проверить Google ID token"""
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://oauth2.googleapis.com/tokeninfo",
+                params={"id_token": token}
+            )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid Google token"
+            )
+
+        data = response.json()
+        return {
+            "email": data.get("email"),
+            "full_name": data.get("name"),
+            "avatar": data.get("picture"),
+            "provider": "google"
+        }
+        
+    async def create_or_update_google_user(self, google_user: dict) -> dict:
+        email = google_user["email"]
+
+        try:
+            user = await supabase.get_user_by_email(email)
+            return user
+        except:
+            user_data = {
+                "email": email,
+                "full_name": google_user.get("full_name"),
+                "phone": "",
+                "role": "customer",
+            }
+            return await supabase.insert_user(user_data)
+        
+    async def google_login(self, token: str) -> dict:
+        google_user = await self.verify_google_token(token)
+        user = await self.create_or_update_google_user(google_user)
+
+        return {
+            "access_token": token,
+            "user": {
+                "id": user["id"],
+                "email": user["email"],
+                "full_name": user["full_name"],
+                "role": user["role"]
+            }
+        }
+
+    async def log_action(self, user_id: str, action: str, resource: str, details: dict):
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"{supabase.rest_url}/audit_logs",
+                json={
+                    "user_id": user_id,
+                    "action": action,
+                    "resource": resource,
+                    "details": details
+                },
+                headers={
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+                    "Content-Type": "application/json"
+                }
+            )
+    async def check_admin_role(self, user_id: str) -> bool:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{supabase.rest_url}/users?id=eq.{user_id}",
+                headers={"apikey": SUPABASE_KEY}
+            )
+
+        if response.status_code != 200:
+            return False
+
+        user = response.json()
+        return user and user[0].get("role") == "admin"
+
 # ============================================
 # ЭКЗЕМПЛЯР СЕРВИСА ДЛЯ ИМПОРТА
 # ============================================

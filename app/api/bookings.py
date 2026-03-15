@@ -425,79 +425,46 @@ async def get_completed_bookings(limit: int = 50):
 async def create_booking(
     restaurant_id: int = Form(),
     restaurant_name: str = Form("Demo"),
-    # ← УБРАЛ date/time, добавил booking_datetime:
     booking_datetime: str = Form(),
     party_size: int = Form(default=2),
     guest_name: str = Form(),
     phone: str = Form(),
     guest_email: Optional[str] = Form(default=""),
     special_requests: Optional[str] = Form(default=""),
+    discount_applied: int = Form(default=0),  # ← ОБЯЗАТЕЛЬНЫЙ параметр!
 ):
     """Создание брони"""
     
-    # Парсинг booking_datetime (формат "2026-01-08T18:00:00")
+    # Парсинг booking_datetime
     try:
         booking_dt = datetime.fromisoformat(booking_datetime.replace('Z', '+00:00'))
         almaty_tz = ZoneInfo("Asia/Almaty")
         booking_datetime_parsed = booking_dt.replace(tzinfo=almaty_tz)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Неверный формат booking_datetime (ожидается YYYY-MM-DDTHH:MM:SS)")
+        raise HTTPException(status_code=400, detail="Неверный формат booking_datetime")
 
-    # Получаем ресторан (для discount)
-    restaurant = await db.get(
-        table="restaurants",
-        filters={"id": f"eq.{restaurant_id}"}
-    )
-    
-    discount = 0
-    if restaurant:
-        # Твоя логика discount (оставил как есть)
-        services = await db.get(
-            table="restaurant_services",
-            filters={"restaurant_id": f"eq.{restaurant_id}"}
-        )
-        
-        if services:
-            service = services[0]
-            service_id = service.get("id")
-            
-            discount_rules = await db.get(
-                table="discount_rules",
-                filters={
-                    "service_id": f"eq.{service_id}",
-                    "is_active": "eq.true",
-                    "valid_from": f"lte.{booking_datetime_parsed.date().isoformat()}",
-                    "valid_to": f"gte.{booking_datetime_parsed.date().isoformat()}"
-                }
-            )
-            
-            if discount_rules:
-                rule = discount_rules[0]
-                time_start = datetime.strptime(rule.get("time_start", ""), "%H:%M:%S").time()
-                time_end = datetime.strptime(rule.get("time_end", ""), "%H:%M:%S").time()
-                booking_time = booking_datetime_parsed.time()
-                
-                if time_start <= booking_time < time_end:
-                    discount = rule.get("discount", 0)
+    # ✅ ПРОСТО ИСПОЛЬЗУЕМ ТО, ЧТО ОТПРАВИЛ FRONTEND!
+    discount = discount_applied  # ← Вот и всё!
 
-    # Данные брони (совпадает с фронтом)
+    # Данные брони
     booking_data = {
         "restaurant_id": restaurant_id,
         "restaurant_name": restaurant_name,
         "guest_name": guest_name,
         "guest_phone": phone.strip(),
         "guest_email": guest_email.strip() if guest_email else None,
-        "booking_datetime": booking_datetime_parsed.isoformat(),  # для Supabase
+        "booking_datetime": booking_datetime_parsed.isoformat(),
         "party_size": party_size,
         "special_requests": special_requests,
-        "discount_applied": discount,
+        "discount_applied": discount,  # ← Сохраняем как есть
         "status": "confirmed",
-        # ← NULL для FK (MVP)
         "user_id": None,
         "table_id": None,
     }
     
     booking = await booking_service.create(booking_data)
+    # ... остальной код ...
+
     
     if not booking or (isinstance(booking, list) and len(booking) == 0):
         raise HTTPException(status_code=400, detail="Ошибка создания брони")

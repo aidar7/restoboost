@@ -12,6 +12,7 @@ interface User {
 }
 
 interface AuthContextType {
+  googleLogin: (token: string) => Promise<void>;
   user: User | null;
   token: string | null;
   isLoading: boolean;
@@ -24,7 +25,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000/api';
+
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -56,7 +58,7 @@ const checkAuth = async (authToken?: string) => {
 
   try {
     // --- ИЗМЕНЕНИЯ ЗДЕСЬ ---
-    const response = await fetch(`${API_URL}/api/auth/verify-token`, {
+    const response = await fetch(`${API_URL}/auth/verify-token`, {
       method: 'POST', // 1. Метод теперь POST
       headers: {
         'Content-Type': 'application/json'
@@ -89,7 +91,7 @@ const checkAuth = async (authToken?: string) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -128,7 +130,7 @@ const register = async (
   setIsLoading(true);
   try {
     // --- ШАГ 1: РЕГИСТРАЦИЯ ---
-    const registerResponse = await fetch(`${API_URL}/api/auth/register`, {
+    const registerResponse = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, full_name, phone, role })
@@ -160,6 +162,35 @@ const register = async (
   }
 };
 
+// Google Login
+const googleLogin = async (googleToken: string) => {
+  setIsLoading(true);
+  try {
+    const response = await fetch(`${API_URL}/auth/google/callback`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ token: googleToken })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Google login failed');
+    }
+
+    const data = await response.json();
+    setToken(data.user.access_token || googleToken);
+    setUser(data.user);
+    localStorage.setItem('auth_token', data.user.access_token || googleToken);
+  } catch (error) {
+    console.error('Google login error:', error);
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   // Логаут
   const logout = () => {
@@ -178,7 +209,8 @@ const register = async (
         login,
         register,
         logout,
-        checkAuth
+        checkAuth,
+        googleLogin,
       }}
     >
       {children}

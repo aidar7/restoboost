@@ -290,12 +290,12 @@ function BookingConfirmationContent() {
               </div>
             </div>
 
-            {(booking?.discount_applied || 20) > 0 && (
+            {booking?.discount_applied && booking.discount_applied > 0 && (
               <div className="flex items-start justify-between bg-warning-light p-4 rounded-lg">
                 <div>
                   <p className="text-sm text-muted-foreground font-semibold">СКИДКА</p>
                   <p className="text-lg font-bold text-warning mt-1">
-                    -{booking?.discount_applied || 20}%
+                            -{booking.discount_applied}%
                   </p>
                 </div>
                 <Badge className="bg-warning-light text-warning">

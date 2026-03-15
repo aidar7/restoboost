@@ -294,6 +294,7 @@ export default function RestaurantDetail() {
           phone: formData.phone,
           guest_email: formData.guest_email || '',
           special_requests: formData.special_requests,
+          discount_applied: String(selectedDiscount),
         }),
       });
       if (!res.ok) throw new Error(await res.text());

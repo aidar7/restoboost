@@ -1,14 +1,11 @@
-// app/layout.tsx
-
 import type { Metadata } from "next";
 import "./globals.css";
-import { AuthProvider } from "@/app/context/AuthContext";
-
-// 1. Импортируем наш новый "умный" хэдер
-import { SiteHeader } from "@/components/headers/SiteHeader"; 
+import { SiteHeaderWrapper } from "@/components/headers/SiteHeaderWrapper";
+import { Footer } from "@/components/footer/footer_component";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "RestoBoost",
+  title: "Orynbar",
   description: "Restaurant booking platform with dynamic discounts",
 };
 
@@ -16,16 +13,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className="antialiased">
-        <AuthProvider>
-          {/* 2. Вставляем хэдер сюда, внутри AuthProvider */}
-          <SiteHeader />
-          
-          {/* 3. Оборачиваем основной контент в <main> для семантики */}
-          <main className="flex-1">
-            {children}
-          </main>
-          
-        </AuthProvider>
+        <Providers>
+          <div className="flex flex-col min-h-screen">
+            <SiteHeaderWrapper />
+            <main className="flex-1">
+              {children}
+            </main>
+            <Footer />
+          </div>
+        </Providers>
       </body>
     </html>
   );

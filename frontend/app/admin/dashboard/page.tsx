@@ -760,7 +760,7 @@ export default function DashboardPage() {
                                         </TableCell>
                                         <TableCell>{booking.party_size || 2}</TableCell>
                                         <TableCell>
-                                            {booking.discount_applied ? (
+                                            {Number(booking.discount_applied) > 0 ? (
                                                 <Badge variant="secondary">-{booking.discount_applied}%</Badge>
                                             ) : (
                                                 <span className="text-muted-foreground">—</span>
