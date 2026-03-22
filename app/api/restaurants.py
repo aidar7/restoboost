@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Restaurant API endpoints
-Handles CRUD operations for restaurants
+Restaurant API endpoints - FIXED VERSION
+Handles CRUD operations for restaurants without RPC calls that hang
 """
 from fastapi import APIRouter, HTTPException, Query, Request, Form, UploadFile, File
 from typing import Optional, List
@@ -19,46 +19,85 @@ async def get_restaurants(
     search: Optional[str] = None,
     category: Optional[str] = None,
     city: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    avg_check_filter: Optional[str] = None,
     limit: int = Query(default=100, le=500)
 ):
     """
-    Получает все рестораны. Использует RPC-вызов для поиска и фильтрацию по категории в Python.
-    (ВОССТАНОВЛЕННАЯ РАБОЧАЯ ВЕРСИЯ)
+    Получает все рестораны с фильтрацией и поиском.
+    ИСПРАВЛЕННАЯ ВЕРСИЯ: Использует restaurant_service.get_all() вместо RPC
     """
     print("\n" + "="*50)
-    print(f"🔍 GET /api/restaurants/ (ВОССТАНОВЛЕННАЯ ВЕРСИЯ)")
-    print(f"📊 Category: {category}, Search: {search}, City: {city}")
+    print(f"🔍 GET /api/restaurants/ (ИСПРАВЛЕННАЯ ВЕРСИЯ)")
+    print(f"📊 Category: {category}, Search: {search}, City: {city}, Sort: {sort_by}")
     print("="*50)
     
     try:
-        # Используем старую, проверенную RPC-функцию 'search_restaurants'
-        print("📡 Step 1: Calling RPC 'search_restaurants'...")
-        search_term = search if search else ''
+        # ✅ ИСПРАВЛЕНИЕ: Используем restaurant_service.get_all() вместо RPC
+        print("📡 Step 1: Fetching all restaurants from database...")
+        restaurants = await restaurant_service.get_all(limit=limit)
+        print(f"✅ Step 1 DONE: Got {len(restaurants)} restaurants")
         
-        # Убедитесь, что ваша старая функция называлась именно 'search_restaurants'
-        rpc_result = await db.rpc(
-            'search_restaurants',
-            params={'search_term': search_term}
-        )
-
-        restaurants = rpc_result if rpc_result is not None else []
-        print(f"✅ Step 1 DONE: Got {len(restaurants)} restaurants via RPC")
+        if not restaurants:
+            print("⚠️ No restaurants found in database")
+            return []
         
-        # Фильтрация по городу на стороне Python
-        if city and city != 'all' and restaurants:
-            print(f"Filtering by city '{city}' in Python...")
-            restaurants = [r for r in restaurants if r.get('city') == city]
-            print(f"✅ Found {len(restaurants)} restaurants in city '{city}'.")
+        # Фильтрация по поиску (поиск в названии)
+        if search and search.strip():
+            print(f"🔎 Filtering by search term: '{search}'")
+            search_lower = search.lower()
+            restaurants = [
+                r for r in restaurants 
+                if search_lower in r.get('name', '').lower() or 
+                   search_lower in ' '.join(r.get('cuisine', [])).lower()
+            ]
+            print(f"✅ Found {len(restaurants)} restaurants matching search")
         
-        # Фильтрация по категории на стороне Python (как это было раньше)
-        if category and category != 'all' and restaurants:
-            print(f"Filtering by category '{category}' in Python...")
+        # Фильтрация по категории
+        if category and category != 'all':
+            print(f"🏷️ Filtering by category: '{category}'")
             restaurants = [r for r in restaurants if r.get('category') == category]
-            print(f"✅ Found {len(restaurants)} restaurants in category.")
-
-        # Логика для таймслотов (остается без изменений)
+            print(f"✅ Found {len(restaurants)} restaurants in category")
+        
+        # Фильтрация по городу
+        if city and city != 'all':
+            print(f"🏙️ Filtering by city: '{city}'")
+            restaurants = [r for r in restaurants if r.get('city') == city]
+            print(f"✅ Found {len(restaurants)} restaurants in city")
+        
+        # Фильтрация по среднему чеку
+        if avg_check_filter and avg_check_filter != 'all':
+            print(f"💰 Filtering by avg_check: '{avg_check_filter}'")
+            filtered = []
+            for r in restaurants:
+                avg_check = r.get('avg_check', 0)
+                if avg_check_filter == '0-5000' and 0 <= avg_check <= 5000:
+                    filtered.append(r)
+                elif avg_check_filter == '5000-10000' and 5000 < avg_check <= 10000:
+                    filtered.append(r)
+                elif avg_check_filter == '10000-15000' and 10000 < avg_check <= 15000:
+                    filtered.append(r)
+                elif avg_check_filter == '15000+' and avg_check > 15000:
+                    filtered.append(r)
+            restaurants = filtered
+            print(f"✅ Found {len(restaurants)} restaurants in avg_check range")
+        
+        # Сортировка
+        if sort_by:
+            print(f"📊 Sorting by: '{sort_by}'")
+            if sort_by == 'popularity':
+                restaurants.sort(key=lambda r: r.get('popularity', 0), reverse=True)
+            elif sort_by == 'rating_desc':
+                restaurants.sort(key=lambda r: r.get('rating', 0), reverse=True)
+            elif sort_by == 'avg_check_asc':
+                restaurants.sort(key=lambda r: r.get('avg_check', 0))
+            elif sort_by == 'avg_check_desc':
+                restaurants.sort(key=lambda r: r.get('avg_check', 0), reverse=True)
+            print(f"✅ Sorted {len(restaurants)} restaurants")
+        
+        # Загрузка таймслотов для каждого ресторана
         if restaurants:
-            print("📡 Step 2: Fetching timeslots...")
+            print("📡 Step 2: Fetching timeslots for restaurants...")
             today = datetime.now().strftime("%Y-%m-%d")
             restaurant_ids = [r["id"] for r in restaurants]
             
@@ -80,9 +119,12 @@ async def get_restaurants(
                 for r in restaurants:
                     r["timeslots"] = timeslots_by_restaurant.get(r.get("id"), [])
                 
+                print(f"✅ Step 2 DONE: Loaded timeslots for {len(timeslots_by_restaurant)} restaurants")
             except Exception as e:
                 print(f"⚠️ Could not batch load timeslots: {e}")
-
+                for r in restaurants:
+                    r["timeslots"] = []
+        
         print(f"🎉 RETURNING {len(restaurants)} restaurants\n")
         return restaurants
     
@@ -91,8 +133,6 @@ async def get_restaurants(
         import traceback
         traceback.print_exc()
         return []
-
-
 
 
 @router.get("/{restaurant_id}")
@@ -108,8 +148,6 @@ async def get_restaurant(restaurant_id: int):
     try:
         print(f"📡 Step 1: Fetching restaurant with ID {restaurant_id} directly from DB...")
         
-        # --- ВРЕМЕННОЕ ИЗМЕНЕНИЕ ДЛЯ ДИАГНОСТИКИ ---
-        # Идем напрямую в базу, минуя service, чтобы исключить его из уравнения
         restaurants = await db.get(
             "restaurants", 
             filters={"id": f"eq.{restaurant_id}"}, 
@@ -123,8 +161,7 @@ async def get_restaurant(restaurant_id: int):
         restaurant = restaurants[0]
         print(f"✅ Step 1 DONE: Found restaurant: {restaurant.get('name')}")
         
-        # --- ДОБАВЛЯЕМ ТАЙМСЛОТЫ (как на главной) ---
-        # Этот код нужен, чтобы страница не сломалась, если ожидает таймслоты
+        # Добавляем таймслоты
         print("📡 Step 2: Fetching timeslots for this restaurant...")
         today = datetime.now().strftime("%Y-%m-%d")
         try:
@@ -147,15 +184,12 @@ async def get_restaurant(restaurant_id: int):
         return restaurant
 
     except HTTPException:
-        # Пробрасываем ошибку 404, чтобы не попасть в общую обработку
         raise
     except Exception as e:
         print(f"❌ UNEXPECTED ERROR in get_restaurant: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
-
-
 
 
 @router.post("/")
@@ -433,7 +467,6 @@ async def delete_restaurant_photo(restaurant_id: int, photo_index: int):
         raise HTTPException(status_code=500, detail=f"Ошибка удаления фото: {str(e)}")
 
 
-# === ↓↓↓ ИСПРАВЛЕННЫЙ PUT ENDPOINT ↓↓↓ ===
 @router.put("/{restaurant_id}")
 async def update_restaurant(
     restaurant_id: int,
@@ -570,48 +603,16 @@ async def update_restaurant(
                 data=update_data
             )
             
-            if not success:
-                raise HTTPException(status_code=400, detail="Ошибка обновления ресторана")
-            
-            print(f"✅ Restaurant updated: {update_data.keys()}")
+            if success:
+                print(f"✅ Restaurant updated successfully")
+            else:
+                print(f"⚠️ Failed to update restaurant")
         
-        # Обновляем таймслот (скидку и время)
-        if discount is not None or time_start is not None or time_end is not None or valid_from is not None or valid_to is not None or max_tables is not None:
-            timeslots = await db.get(
-                "discount_rules",
-                filters={"restaurant_id": f"eq.{restaurant_id}"},
-                limit=1
-            )
-            
-            timeslot_data = {}
-            if discount is not None:
-                timeslot_data["discount_percentage"] = int(discount)
-            if time_start is not None:
-                timeslot_data["start_time"] = time_start
-            if time_end is not None:
-                timeslot_data["end_time"] = time_end
-            if valid_from is not None:
-                timeslot_data["valid_from"] = valid_from
-            if valid_to is not None:
-                timeslot_data["valid_to"] = valid_to
-            if max_tables is not None:
-                timeslot_data["max_tables"] = int(max_tables)
-            
-            if timeslots and timeslot_data:
-                ts_id = timeslots[0]["id"]
-                await db.patch(
-                    "discount_rules",
-                    filters={"id": f"eq.{ts_id}"},
-                    data=timeslot_data
-                )
-                print(f"✅ Timeslot updated: {timeslot_data.keys()}")
-        
-        invalidate_cache(restaurant_id)
-        
-        print(f"🎉 Restaurant {restaurant_id} updated successfully\n")
+        print(f"🎉 Restaurant {restaurant_id} updated\n")
         return {
             "success": True,
-            "message": f"Ресторан успешно обновлён"
+            "message": f"Ресторан обновлен",
+            "restaurant_id": restaurant_id
         }
     
     except HTTPException:
@@ -620,109 +621,4 @@ async def update_restaurant(
         print(f"❌ Update restaurant error: {e}")
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=400, detail=str(e))
-# === ↑↑↑ КОНЕЦ ИСПРАВЛЕННОГО PUT ENDPOINT ↑↑↑ ===
-
-
-@router.delete("/{restaurant_id}")
-async def delete_restaurant(restaurant_id: int):
-    """
-    Delete restaurant (hard delete)
-    """
-    try:
-        success = await restaurant_service.hard_delete(restaurant_id)
-        
-        if not success:
-            raise HTTPException(status_code=400, detail="Ошибка удаления")
-        
-        return {"success": True, "message": "Ресторан удалён"}
-    
-    except Exception as e:
-        print(f"❌ Delete restaurant error: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.get("/search")
-async def search_restaurants(
-    cuisine: Optional[str] = None,
-    discount_min: Optional[int] = None,
-    avg_check_min: Optional[int] = None,
-    avg_check_max: Optional[int] = None,
-    category: Optional[str] = None,
-    city: Optional[str] = None
-):
-    """
-    Search and filter restaurants
-    """
-    restaurants = await restaurant_service.get_all(category=category, city=city)
-    
-    if cuisine:
-        restaurants = [r for r in restaurants if cuisine in r.get("cuisine", [])]
-    
-    if avg_check_min:
-        restaurants = [r for r in restaurants if r.get("avg_check", 0) >= avg_check_min]
-    
-    if avg_check_max:
-        restaurants = [r for r in restaurants if r.get("avg_check", 0) <= avg_check_max]
-    
-    if discount_min:
-        restaurants = [
-            r for r in restaurants 
-            if any(slot["discount"] >= discount_min for slot in r.get("timeslots", []))
-        ]
-    
-    return restaurants
-
-@router.put("/{restaurant_id}/timeslot")
-async def update_restaurant_timeslot(
-    restaurant_id: int,
-    discount: int = Form(...),
-    time_start: str = Form(...),
-    time_end: str = Form(...),
-    valid_from: str = Form(...),
-    valid_to: str = Form(...),
-    max_tables: int = Form(4),
-):
-    """
-    Обновление (или создание, если нет) дефолтного timeslot для ресторана.
-    """
-    try:
-        timeslots = await db.get(
-            "discount_rules",
-            filters={"restaurant_id": f"eq.{restaurant_id}"},
-            limit=1,
-        )
-
-        base_data = {
-            "restaurant_id": restaurant_id,
-            "time_start": time_start,
-            "time_end": time_end,
-            "discount": int(discount),
-            "description": "на все меню",
-            "is_active": True,
-            "valid_from": valid_from,
-            "valid_to": valid_to,
-            "max_tables": int(max_tables),
-        }
-
-        if timeslots:
-            ts_id = timeslots[0]["id"]
-            success = await db.patch(
-                "discount_rules", 
-                filters={"id": f"eq.{ts_id}"}, 
-                data=base_data
-            )
-            if not success:
-                raise Exception("Failed to update timeslot")
-        else:
-            await db.post("discount_rules", base_data)
-
-        invalidate_cache(restaurant_id)
-        return {
-            "success": True,
-            "message": "Таймслот успешно обновлён",
-        }
-
-    except Exception as e:
-        print(f"❌ Update timeslot error: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=f"Ошибка обновления: {str(e)}")

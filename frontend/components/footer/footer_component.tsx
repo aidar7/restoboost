@@ -48,21 +48,6 @@ export function Footer() {
                   Войти в личный кабинет
                 </Link>
               </li>
-              <li>
-                <Link href="/partner/register" className="hover:text-green-500 transition">
-                  Зарегистрировать ресторан
-                </Link>
-              </li>
-              <li>
-                <Link href="/partner/dashboard" className="hover:text-green-500 transition">
-                  Дашборд партнёра
-                </Link>
-              </li>
-              <li>
-                <a href="mailto:partners@orynbar.com" className="hover:text-green-500 transition">
-                  Связаться с нами
-                </a>
-              </li>
             </ul>
           </div>
 

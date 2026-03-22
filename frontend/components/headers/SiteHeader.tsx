@@ -2,19 +2,18 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { AdminHeader } from './admin-header'; // Этот импорт можно даже убрать
 import { PublicHeader } from './public-header';
 
 export function SiteHeader() {
   const pathname = usePathname();
   const isAdminPath = pathname.startsWith('/admin');
+  const isPartnerPath = pathname.startsWith('/partner');
 
-  // ЕСЛИ мы находимся в админ-разделе, этот компонент не должен ничего рендерить.
-  // За шапку админки отвечает AdminLayout.
-  if (isAdminPath) {
+  // Скрываем хэдер на админ и партнер страницах
+  if (isAdminPath || isPartnerPath) {
     return null;
   }
 
-  // Во всех остальных случаях показываем публичную шапку.
+  // Во всех остальных случаях показываем публичную шапку
   return <PublicHeader />;
 }
