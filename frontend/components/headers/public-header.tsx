@@ -1,4 +1,3 @@
-
 // frontend/components/headers/public-header.tsx
 'use client';
 
@@ -31,6 +30,14 @@ export function PublicHeader() {
 
   const handleMyBookings = () => {
     router.push('/my-bookings');
+  };
+
+  // Новая функция для выхода с редиректом
+  const handleLogout = async () => {
+    logout();
+    // Небольшая задержка для анимации
+    await new Promise(resolve => setTimeout(resolve, 300));
+    router.push('/');
   };
 
   return (
@@ -101,7 +108,7 @@ export function PublicHeader() {
                   )}
 
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="text-destructive">
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Выйти</span>
                   </DropdownMenuItem>
