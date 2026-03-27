@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, AlertCircle, Users } from 'lucide-react';
+import { Loader2, AlertCircle, Users, Calendar, Phone, Gift } from 'lucide-react';
 
 // ─────────────────────────────────────────────
 // Типы
@@ -66,14 +66,6 @@ function isEmailValid(email: string): boolean {
     return !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function getOccupancyColor(booked: number, capacity: number): string {
-    if (capacity === 0) return 'bg-gray-300';
-    const pct = booked / capacity;
-    if (pct >= 1) return 'bg-red-500';
-    if (pct >= 0.7) return 'bg-amber-400';
-    return 'bg-green-500';
-}
-
 function getOccupancyLabel(booked: number, capacity: number): string {
     const left = capacity - booked;
     if (left <= 0) return 'Мест нет';
@@ -106,7 +98,7 @@ function SlotsSkeleton() {
             {Array.from({ length: 6 }).map((_, i) => (
                 <div
                     key={i}
-                    className="flex-shrink-0 w-[72px] h-[80px] rounded-xl bg-muted animate-pulse"
+                    className="flex-shrink-0 w-[84px] h-[80px] rounded-xl bg-muted animate-pulse"
                     style={{ animationDelay: `${i * 60}ms` }}
                 />
             ))}
@@ -115,7 +107,7 @@ function SlotsSkeleton() {
 }
 
 // ─────────────────────────────────────────────
-// TimeslotButton
+// TimeslotButton — без иконки Clock
 // ─────────────────────────────────────────────
 const TimeslotButton = React.memo(({
     slot, selected, onSelect,
@@ -124,17 +116,13 @@ const TimeslotButton = React.memo(({
     selected: boolean;
     onSelect: () => void;
 }) => {
-    const occupancyColor = getOccupancyColor(slot.booked_guests, slot.capacity);
     const occupancyLabel = getOccupancyLabel(slot.booked_guests, slot.capacity);
 
     return (
-        <div className="relative">
-            {/* Бэдж скидки — абсолютно позиционирован сверху справа */}
+        <div className="relative pt-3 h-[80px]">
+            {/* Бэдж скидки — по центру сверху */}
             {slot.discount > 0 && (
-                <span className={[
-                    'absolute -top-2 -right-2 z-10 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap',
-                    selected ? 'bg-green-700 text-white' : 'bg-green-600 text-white',
-                ].join(' ')}>
+                <span className="absolute top-0 right-0 z-10 text-[10px] font-bold px-2 py-0.5 bg-green-600 text-white leading-[1.4] rounded-tr-[10px] rounded-bl-[6px]">
                     -{slot.discount}%
                 </span>
             )}
@@ -143,37 +131,24 @@ const TimeslotButton = React.memo(({
                 type="button"
                 disabled={!slot.available}
                 onClick={onSelect}
-                className={[
-                    'flex flex-col items-center rounded-xl border-2 transition-all duration-200 pt-2 pb-2 px-1 w-full',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1',
-                    !slot.available
+                aria-pressed={selected}
+                aria-label={`Время ${slot.time}${slot.discount > 0 ? `, скидка ${slot.discount}%` : ''}`}
+                className={`
+                    flex flex-col items-center justify-center rounded-xl border-2 transition-all duration-200
+    px-3 w-full min-w-[76px] h-[64px]
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1
+                    ${!slot.available
                         ? 'bg-muted text-muted-foreground cursor-not-allowed opacity-40 border-border'
                         : selected
-                            ? 'bg-green-600 text-white border-green-600 shadow-md scale-[1.04]'
-                            : 'border-border hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-950/20 bg-background',
-                ].join(' ')}
+                            ? 'bg-primary text-white border-primary shadow-md'
+                            : 'border-border hover:border-primary hover:bg-primary/5 bg-background'
+                    }
+                `}
             >
-                {/* Время */}
-                <div className="text-sm font-bold leading-none tabular-nums">{slot.time}</div>
-
-                {/* Подпись скидки */}
-                {slot.discount > 0 ? (
-                    <div className={`text-[9px] leading-tight text-center mt-1 ${selected ? 'text-white/80' : 'text-muted-foreground'}`}>
-                        Скидка на всё меню
-                    </div>
-                ) : (
-                    <div className="h-[14px]" />
-                )}
-
-                {/* Индикатор занятости */}
-                {occupancyLabel && (
-                    <div className="flex items-center gap-1 mt-1">
-                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${selected ? 'bg-white/70' : occupancyColor}`} />
-                        <span className={`text-[9px] leading-none ${selected ? 'text-white/80' : 'text-muted-foreground'}`}>
-                            {occupancyLabel}
-                        </span>
-                    </div>
-                )}
+                {/* Время — крупно, без иконки */}
+                <div className="text-base font-bold leading-none tabular-nums">
+                    {slot.time}
+                </div>
             </button>
         </div>
     );
@@ -202,10 +177,7 @@ const DateStrip = React.memo(({
     }, [selectedDate, days]);
 
     return (
-        <div
-            ref={scrollRef}
-            className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar"
-        >
+        <div ref={scrollRef} className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
             {days.map((dateStr) => {
                 const d = new Date(dateStr + 'T00:00:00');
                 const weekday = WEEKDAYS[d.getDay()];
@@ -219,19 +191,22 @@ const DateStrip = React.memo(({
                         key={dateStr}
                         type="button"
                         onClick={() => onSelect(dateStr)}
-                        className={[
-                            'flex-shrink-0 flex flex-col items-center rounded-xl border-2 px-2.5 py-2 transition-all duration-200 min-w-[52px]',
-                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500',
-                            isSelected
-                                ? 'bg-green-600 text-white border-green-600 shadow-md'
-                                : 'border-border hover:border-green-400 bg-background',
-                        ].join(' ')}
+                        aria-pressed={isSelected}
+                        aria-label={`${isToday ? 'Сегодня' : weekday}, ${dayNum} ${month}`}
+                        className={`
+                            flex-shrink-0 flex flex-col items-center rounded-xl border-2 px-2.5 py-2 transition-all duration-200 min-w-[52px]
+                            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
+                            ${isSelected
+                                ? 'bg-primary text-white border-primary shadow-md'
+                                : 'border-border hover:border-primary/60 bg-background'
+                            }
+                        `}
                     >
-                        <span className={`text-[10px] font-medium leading-none mb-1 ${isSelected ? 'text-green-100' : 'text-muted-foreground'}`}>
+                        <span className={`text-[10px] font-medium leading-none mb-1 ${isSelected ? 'text-blue-100' : 'text-muted-foreground'}`}>
                             {isToday ? 'Сег' : weekday}
                         </span>
                         <span className="text-sm font-bold leading-none">{dayNum}</span>
-                        <span className={`text-[10px] leading-none mt-0.5 ${isSelected ? 'text-green-100' : 'text-muted-foreground'}`}>
+                        <span className={`text-[10px] leading-none mt-0.5 ${isSelected ? 'text-blue-100' : 'text-muted-foreground'}`}>
                             {month}
                         </span>
                     </button>
@@ -243,7 +218,7 @@ const DateStrip = React.memo(({
 DateStrip.displayName = 'DateStrip';
 
 // ─────────────────────────────────────────────
-// BookingForm
+// Основной компонент
 // ─────────────────────────────────────────────
 export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) {
     const router = useRouter();
@@ -266,7 +241,6 @@ export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) 
     const [touched, setTouched] = useState<Record<string, boolean>>({});
     const [bookingError, setBookingError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isSuccess, setIsSuccess] = useState(false);
 
     const nameRef = useRef<HTMLInputElement>(null);
     const emailRef = useRef<HTMLInputElement>(null);
@@ -279,7 +253,7 @@ export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) 
         } catch { }
     }, []);
 
-    // Загрузка слотов
+    // Загрузка слотов с авто-выбором первого
     useEffect(() => {
         if (!restaurantId || !selectedDate) { setTimeslots([]); return; }
         const controller = new AbortController();
@@ -293,7 +267,15 @@ export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) 
                     { signal: controller.signal }
                 );
                 if (!res.ok) throw new Error('Failed');
-                setTimeslots(await res.json());
+                const slots = await res.json();
+                setTimeslots(slots);
+
+                // Автовыбор первого доступного слота
+                const firstAvailable = slots.find((s: Timeslot) => s.available);
+                if (firstAvailable) {
+                    setSelectedTime(firstAvailable.time);
+                    setSelectedDiscount(firstAvailable.discount);
+                }
             } catch (e: any) {
                 if (e?.name === 'AbortError') return;
                 setTimeslots([]);
@@ -353,7 +335,6 @@ export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) 
 
         setBookingError(null);
         setIsSubmitting(true);
-        setIsSuccess(true);
 
         try {
             const res = await fetch(`${API_BASE}/api/bookings`, {
@@ -376,37 +357,45 @@ export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) 
             const result = await res.json();
 
             if (result.success && result.data?.id && result.data?.confirmation_code) {
-                router.push(`/booking-confirmation?booking_id=${result.data.id}&code=${result.data.confirmation_code}`);
+                router.push(`/customer/booking-confirmation?booking_id=${result.data.id}&code=${result.data.confirmation_code}`);
             } else {
                 throw new Error(result.message || 'Ошибка бронирования');
             }
         } catch (e) {
-            setIsSuccess(false);
             setBookingError(e instanceof Error ? e.message : 'Ошибка');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const phoneError = touched.phone && !isPhoneValid(formData.phone) ? 'Введите корректный номер' : '';
-    const nameError = touched.guest_name && !formData.guest_name.trim() ? 'Укажите ваше имя' : '';
-    const emailError = touched.guest_email && !isEmailValid(formData.guest_email) ? 'Некорректный email' : '';
+    const phoneError = touched.phone && !isPhoneValid(formData.phone);
+    const nameError = touched.guest_name && !formData.guest_name.trim();
+    const emailError = touched.guest_email && !isEmailValid(formData.guest_email);
     const canSubmit = !!(selectedDate && selectedTime && formData.guest_name.trim() && isPhoneValid(formData.phone) && !isSubmitting);
 
     return (
         <div className="sticky top-20 max-h-[calc(100vh-5rem)] overflow-y-auto no-scrollbar bg-card border border-border rounded-xl p-6 shadow-lg">
 
+            {/* Заголовок */}
             <div className="mb-5">
                 <h3 className="text-2xl font-bold">Забронировать столик</h3>
-                <p className="text-sm text-green-600 font-semibold mt-0.5">со скидкой до -50%</p>
+                {selectedDiscount > 0 && (
+                    <div className="mt-2 flex items-center gap-2 text-sm text-orange-500 font-semibold">
+                        <Gift className="w-4 h-4" />
+                        <span>Скидка {selectedDiscount}% на всё меню!</span>
+                    </div>
+                )}
             </div>
 
-            <form onSubmit={handleSubmitBooking} className="space-y-5">
+            <form onSubmit={handleSubmitBooking} className="space-y-5" noValidate>
 
                 {/* Дата */}
                 <div>
                     <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm font-medium">Дата</label>
+                        <label className="text-sm font-medium flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-primary" />
+                            Дата
+                        </label>
                         {selectedDate && (
                             <span className="text-xs text-muted-foreground">{formatDisplayDate(selectedDate)}</span>
                         )}
@@ -416,16 +405,16 @@ export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) 
 
                 {/* Кол-во гостей */}
                 <div>
-                    <label className="block text-sm font-medium mb-2">Кол-во гостей</label>
+                    <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-primary" />
+                        Кол-во гостей
+                    </label>
                     <Select
                         value={formData.party_size}
                         onValueChange={(v) => setFormData({ ...formData, party_size: v })}
                     >
                         <SelectTrigger className="text-sm font-medium">
-                            <div className="flex items-center gap-2">
-                                <Users className="w-4 h-4 text-muted-foreground" />
-                                <SelectValue />
-                            </div>
+                            <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                             {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
@@ -437,7 +426,7 @@ export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) 
                     </Select>
                 </div>
 
-                {/* Временные слоты */}
+                {/* Время */}
                 <div>
                     <div className="flex items-center justify-between mb-3">
                         <label className="text-sm font-medium">Время</label>
@@ -448,36 +437,29 @@ export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) 
                         )}
                     </div>
 
-                    {slotsLoading ? (
-                        <SlotsSkeleton />
-                    ) : timeslots.length > 0 ? (
-                        <div
-                            className="flex gap-2 overflow-x-auto no-scrollbar pb-1 pt-2"
-                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', overflowY: 'visible' }}
-                        >
-                            {timeslots.map((slot) => (
-                                <div key={slot.time} className="flex-shrink-0 w-[72px]">
-                                    <TimeslotButton
-                                        slot={slot}
-                                        selected={selectedTime === slot.time}
-                                        onSelect={() => handleSelectTimeslot(slot.time)}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-6 text-muted-foreground text-sm border border-dashed border-border rounded-xl">
-                            Нет доступных слотов на этот день
-                        </div>
-                    )}
+                    <div className="min-h-[96px]">
+                        {slotsLoading ? (
+                            <SlotsSkeleton />
+                        ) : timeslots.length > 0 ? (
+                            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 pt-1">
+                                {timeslots.map((slot) => (
+                                    <div key={slot.time} className="flex-shrink-0 w-[84px]">
+                                        <TimeslotButton
+                                            slot={slot}
+                                            selected={selectedTime === slot.time}
+                                            onSelect={() => handleSelectTimeslot(slot.time)}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-6 text-muted-foreground text-sm border border-dashed border-border rounded-xl flex items-center justify-center min-h-[96px]">
+                                Нет доступных слотов на этот день
+                            </div>
+                        )}
+                    </div>
 
-                    {!slotsLoading && selectedTime && selectedDiscount > 0 && (
-                        <div className="mt-2 text-xs text-green-600 font-semibold flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-                            Скидка {selectedDiscount}% на всё меню в это время
-                        </div>
-                    )}
-                    {!slotsLoading && !selectedTime && timeslots.length > 0 && (
+                    {!slotsLoading && !selectedTime && timeslots.some(s => s.available) && (
                         <p className="text-xs text-amber-500 mt-2 flex items-center gap-1">
                             <AlertCircle className="w-3 h-3" />
                             Выберите время для бронирования
@@ -486,7 +468,11 @@ export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) 
                 </div>
 
                 {/* Контакты */}
-                <div className="space-y-2">
+                <div className="space-y-3">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-primary" />
+                        Контакты
+                    </label>
 
                     {/* Телефон */}
                     <div className="space-y-1">
@@ -500,15 +486,13 @@ export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) 
                             placeholder="+7 (___) ___-__-__"
                             inputMode="tel"
                             autoComplete="tel"
-                            className={[
-                                'transition-colors',
-                                touched.phone && phoneError ? 'border-red-400 focus-visible:ring-red-300' : '',
-                                touched.phone && !phoneError && formData.phone ? 'border-green-400 focus-visible:ring-green-300' : '',
-                            ].join(' ')}
+                            aria-invalid={!!phoneError}
+                            aria-describedby={phoneError ? 'phone-error' : undefined}
+                            className={phoneError ? 'border-red-400 focus-visible:ring-red-300' : ''}
                         />
-                        {touched.phone && phoneError && (
-                            <p className="text-[11px] text-red-500 flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3 flex-shrink-0" />{phoneError}
+                        {phoneError && (
+                            <p id="phone-error" className="text-xs text-red-500 flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" />Введите корректный номер
                             </p>
                         )}
                     </div>
@@ -525,15 +509,13 @@ export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) 
                             onKeyDown={handleNameKeyDown}
                             placeholder="Ваше имя *"
                             autoComplete="name"
-                            className={[
-                                'transition-colors',
-                                touched.guest_name && nameError ? 'border-red-400 focus-visible:ring-red-300' : '',
-                                touched.guest_name && !nameError && formData.guest_name ? 'border-green-400 focus-visible:ring-green-300' : '',
-                            ].join(' ')}
+                            aria-invalid={!!nameError}
+                            aria-describedby={nameError ? 'name-error' : undefined}
+                            className={nameError ? 'border-red-400 focus-visible:ring-red-300' : ''}
                         />
-                        {touched.guest_name && nameError && (
-                            <p className="text-[11px] text-red-500 flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3 flex-shrink-0" />{nameError}
+                        {nameError && (
+                            <p id="name-error" className="text-xs text-red-500 flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" />Укажите ваше имя
                             </p>
                         )}
                     </div>
@@ -549,19 +531,16 @@ export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) 
                             onBlur={() => handleFieldBlur('guest_email')}
                             placeholder="Email (необязательно)"
                             autoComplete="email"
-                            className={[
-                                'transition-colors',
-                                touched.guest_email && emailError ? 'border-red-400 focus-visible:ring-red-300' : '',
-                                touched.guest_email && !emailError && formData.guest_email ? 'border-green-400 focus-visible:ring-green-300' : '',
-                            ].join(' ')}
+                            aria-invalid={!!emailError}
+                            aria-describedby={emailError ? 'email-error' : undefined}
+                            className={emailError ? 'border-red-400 focus-visible:ring-red-300' : ''}
                         />
-                        {touched.guest_email && emailError && (
-                            <p className="text-[11px] text-red-500 flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3 flex-shrink-0" />{emailError}
+                        {emailError && (
+                            <p id="email-error" className="text-xs text-red-500 flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" />Некорректный email
                             </p>
                         )}
                     </div>
-
                 </div>
 
                 {/* Комментарий */}
@@ -575,7 +554,7 @@ export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) 
 
                 {/* Ошибка сабмита */}
                 {bookingError && (
-                    <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm flex items-start gap-2">
+                    <div role="alert" className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm flex items-start gap-2">
                         <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                         {bookingError}
                     </div>
@@ -585,21 +564,18 @@ export function BookingForm({ restaurantId, restaurantName }: BookingFormProps) 
                 <Button
                     type="submit"
                     disabled={!canSubmit}
-                    className={[
-                        'w-full font-semibold py-6 text-base rounded-lg transition-all duration-300 text-white',
-                        isSuccess && isSubmitting ? 'bg-green-700 scale-[0.99]' : 'bg-green-600 hover:bg-green-700',
-                    ].join(' ')}
+                    className="w-full font-semibold py-6 text-base rounded-lg bg-primary hover:bg-primary/90 text-white transition-all duration-200"
                 >
-                    {isSubmitting
-                        ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Оформляем бронь...</>
-                        : 'Забронировать столик'
-                    }
+                    {isSubmitting ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Оформляем бронь...</>
+                    ) : (
+                        'Забронировать столик'
+                    )}
                 </Button>
 
-                {/* Футер */}
-                <div className="pt-4 border-t border-border text-center">
-                    <p className="text-xs text-muted-foreground">Ещё выгоднее в мобильном приложении</p>
-                </div>
+                <p className="text-xs text-center text-muted-foreground">
+                    * — поля обязательные для заполнения
+                </p>
 
             </form>
         </div>

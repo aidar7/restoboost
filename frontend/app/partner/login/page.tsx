@@ -63,7 +63,7 @@ export default function PartnerLoginPage() {
 
     try {
       await login(formData.email, formData.password);
-      router.push('/partner/dashboard');
+      router.push('/partner');
     } catch (err: any) {
       if (err.response?.status === 401) {
         setError('Неверный email или пароль');

@@ -384,493 +384,495 @@ export default function DashboardPage() {
     }
 
     return (
-        <PageHeader
-            title="Аналитика дашборда"
-            breadcrumbs={[
-                { label: 'Админ', href: '/admin' },
-                { label: 'Дашборд' },
-            ]}
-        >
-            {/* твои карточки KPI */}
+        <main className="container mx-auto px-4 py-8">
+            <PageHeader
+                title="Аналитика дашборда"
+                breadcrumbs={[
+                    { label: 'Админ', href: '/admin' },
+                    { label: 'Дашборд' },
+                ]}
+            >
+                {/* твои карточки KPI */}
 
 
-            <main className="flex flex-1 flex-col gap-4 p-4 sm:px-6 sm:py-6 md:gap-8">
-                {/* Statistics Cards */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <main className="flex flex-1 flex-col gap-4 p-4 sm:px-6 sm:py-6 md:gap-8">
+                    {/* Statistics Cards */}
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">
+                                    Всего броней
+                                </CardTitle>
+                                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.total}</div>
+                                <p className="text-xs text-muted-foreground">
+                                    Общее количество бронирований
+                                </p>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">
+                                    Сегодня
+                                </CardTitle>
+                                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.today_count}</div>
+                                <p className="text-xs text-muted-foreground">
+                                    {stats.today_count > 0 ? (
+                                        <span className="text-success">↑ Активные брони</span>
+                                    ) : (
+                                        'Нет броней на сегодня'
+                                    )}
+                                </p>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">
+                                    На неделе
+                                </CardTitle>
+                                <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.week_count}</div>
+                                <p className="text-xs text-muted-foreground">
+                                    За последние 7 дней
+                                </p>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">
+                                    Всего гостей
+                                </CardTitle>
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.total_guests}</div>
+                                <p className="text-xs text-muted-foreground">
+                                    Суммарно по всем броням
+                                </p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Подтверждено посещений</CardTitle>
+                                <CheckCircle className="h-4 w-4 text-success" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{completedStats.totalVisits}</div>
+                                <p className="text-xs text-muted-foreground">Завершённые брони</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Гостей обслужено</CardTitle>
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{completedStats.totalGuests}</div>
+                                <p className="text-xs text-muted-foreground">По завершённым</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Средняя скидка</CardTitle>
+                                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">-{completedStats.avgDiscount}%</div>
+                                <p className="text-xs text-muted-foreground">По завершённым</p>
+                            </CardContent>
+                        </Card>
+
+                    </div>
+
+
+                    {/* Charts Row - как в shadcn dashboard */}
+                    <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+                        {/* Брони за 7 дней - занимает 3 колонки из 4 */}
+                        <Card className="lg:col-span-3">
+                            <CardHeader>
+                                <CardTitle>Брони за последние 7 дней</CardTitle>
+                                <CardDescription>
+                                    Динамика бронирований и количества гостей
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="pl-2">
+                                <ChartContainer
+                                    config={{
+                                        bookings: {
+                                            label: "Броней",
+                                            color: "var(--chart-1)",  // Другой цвет из палитры
+                                        },
+                                        guests: {
+                                            label: "Гостей",
+                                            color: "oklch(var(--chart-4))",
+                                        },
+                                    }}
+                                    className="aspect-auto h-[250px] w-full"
+                                >
+                                    <AreaChart data={getBookingsByDayData()}>
+                                        <defs>
+                                            <linearGradient id="fillBookings" x1="0" y1="0" x2="0" y2="1">
+                                                <stop
+                                                    offset="5%"
+                                                    stopColor="var(--color-bookings)"
+                                                    stopOpacity={0.8}
+                                                />
+                                                <stop
+                                                    offset="95%"
+                                                    stopColor="var(--color-bookings)"
+                                                    stopOpacity={0.1}
+                                                />
+                                            </linearGradient>
+                                            <linearGradient id="fillGuests" x1="0" y1="0" x2="0" y2="1">
+                                                <stop
+                                                    offset="5%"
+                                                    stopColor="var(--color-guests)"
+                                                    stopOpacity={0.8}
+                                                />
+                                                <stop
+                                                    offset="95%"
+                                                    stopColor="var(--color-guests)"
+                                                    stopOpacity={0.1}
+                                                />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid vertical={false} />
+                                        <XAxis
+                                            dataKey="date"
+                                            tickLine={false}
+                                            axisLine={false}
+                                            tickMargin={8}
+                                            minTickGap={32}
+                                        />
+                                        <ChartTooltip
+                                            cursor={false}
+                                            content={(props: any) => <ChartTooltipContent {...props} indicator="dot" />}
+                                        />
+                                        <Area
+                                            dataKey="guests"
+                                            type="natural"
+                                            fill="url(#fillGuests)"
+                                            fillOpacity={0.4}
+                                            stroke="var(--color-guests)"
+                                            stackId="a"
+                                        />
+                                        <Area
+                                            dataKey="bookings"
+                                            type="natural"
+                                            fill="url(#fillBookings)"
+                                            fillOpacity={0.4}
+                                            stroke="var(--color-bookings)"
+                                            stackId="a"
+                                        />
+                                    </AreaChart>
+                                </ChartContainer>
+                            </CardContent>
+                        </Card>
+
+                        {/* Топ ресторанов - занимает 1 колонку */}
+                        <Card className="lg:col-span-1">
+                            <CardHeader>
+                                <CardTitle>Топ рестораны</CardTitle>
+                                <CardDescription>
+                                    По количеству броней
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ChartContainer
+                                    config={{
+                                        bookings: {
+                                            label: "Броней",
+                                            color: "hsl(var(--chart-1))",
+                                        },
+                                    }}
+                                    className="aspect-auto h-[250px] w-full"
+                                >
+                                    <BarChart
+                                        data={getTopRestaurantsData()}
+                                        layout="vertical"
+                                        margin={{
+                                            left: 0,
+                                        }}
+                                    >
+                                        <YAxis
+                                            dataKey="name"
+                                            type="category"
+                                            tickLine={false}
+                                            tickMargin={10}
+                                            axisLine={false}
+                                            tickFormatter={(value) => value.slice(0, 15)}
+                                        />
+                                        <XAxis type="number" hide />
+                                        <ChartTooltip
+                                            cursor={false}
+                                            content={(props: any) => <ChartTooltipContent {...props} hideLabel />}
+                                        />
+                                        <Bar
+                                            dataKey="bookings"
+                                            fill="var(--color-bookings)"
+                                            radius={5}
+                                        />
+                                    </BarChart>
+                                </ChartContainer>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+
+
+
+
+                    {/* Filters Card */}
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Всего броней
-                            </CardTitle>
-                            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.total}</div>
-                            <p className="text-xs text-muted-foreground">
-                                Общее количество бронирований
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Сегодня
-                            </CardTitle>
-                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.today_count}</div>
-                            <p className="text-xs text-muted-foreground">
-                                {stats.today_count > 0 ? (
-                                    <span className="text-success">↑ Активные брони</span>
-                                ) : (
-                                    'Нет броней на сегодня'
-                                )}
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                На неделе
-                            </CardTitle>
-                            <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.week_count}</div>
-                            <p className="text-xs text-muted-foreground">
-                                За последние 7 дней
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Всего гостей
-                            </CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.total_guests}</div>
-                            <p className="text-xs text-muted-foreground">
-                                Суммарно по всем броням
-                            </p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Подтверждено посещений</CardTitle>
-                            <CheckCircle className="h-4 w-4 text-success" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{completedStats.totalVisits}</div>
-                            <p className="text-xs text-muted-foreground">Завершённые брони</p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Гостей обслужено</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{completedStats.totalGuests}</div>
-                            <p className="text-xs text-muted-foreground">По завершённым</p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Средняя скидка</CardTitle>
-                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">-{completedStats.avgDiscount}%</div>
-                            <p className="text-xs text-muted-foreground">По завершённым</p>
-                        </CardContent>
-                    </Card>
-
-                </div>
-
-
-                {/* Charts Row - как в shadcn dashboard */}
-                <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-                    {/* Брони за 7 дней - занимает 3 колонки из 4 */}
-                    <Card className="lg:col-span-3">
                         <CardHeader>
-                            <CardTitle>Брони за последние 7 дней</CardTitle>
+                            <CardTitle>Фильтры</CardTitle>
                             <CardDescription>
-                                Динамика бронирований и количества гостей
+                                Используйте фильтры для поиска конкретных бронирований
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="pl-2">
-                            <ChartContainer
-                                config={{
-                                    bookings: {
-                                        label: "Броней",
-                                        color: "var(--chart-1)",  // Другой цвет из палитры
-                                    },
-                                    guests: {
-                                        label: "Гостей",
-                                        color: "oklch(var(--chart-4))",
-                                    },
-                                }}
-                                className="aspect-auto h-[250px] w-full"
-                            >
-                                <AreaChart data={getBookingsByDayData()}>
-                                    <defs>
-                                        <linearGradient id="fillBookings" x1="0" y1="0" x2="0" y2="1">
-                                            <stop
-                                                offset="5%"
-                                                stopColor="var(--color-bookings)"
-                                                stopOpacity={0.8}
-                                            />
-                                            <stop
-                                                offset="95%"
-                                                stopColor="var(--color-bookings)"
-                                                stopOpacity={0.1}
-                                            />
-                                        </linearGradient>
-                                        <linearGradient id="fillGuests" x1="0" y1="0" x2="0" y2="1">
-                                            <stop
-                                                offset="5%"
-                                                stopColor="var(--color-guests)"
-                                                stopOpacity={0.8}
-                                            />
-                                            <stop
-                                                offset="95%"
-                                                stopColor="var(--color-guests)"
-                                                stopOpacity={0.1}
-                                            />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis
-                                        dataKey="date"
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickMargin={8}
-                                        minTickGap={32}
-                                    />
-                                    <ChartTooltip
-                                        cursor={false}
-                                        content={(props: any) => <ChartTooltipContent {...props} indicator="dot" />}
-                                    />
-                                    <Area
-                                        dataKey="guests"
-                                        type="natural"
-                                        fill="url(#fillGuests)"
-                                        fillOpacity={0.4}
-                                        stroke="var(--color-guests)"
-                                        stackId="a"
-                                    />
-                                    <Area
-                                        dataKey="bookings"
-                                        type="natural"
-                                        fill="url(#fillBookings)"
-                                        fillOpacity={0.4}
-                                        stroke="var(--color-bookings)"
-                                        stackId="a"
-                                    />
-                                </AreaChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
-
-                    {/* Топ ресторанов - занимает 1 колонку */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>Топ рестораны</CardTitle>
-                            <CardDescription>
-                                По количеству броней
-                            </CardDescription>
-                        </CardHeader>
                         <CardContent>
-                            <ChartContainer
-                                config={{
-                                    bookings: {
-                                        label: "Броней",
-                                        color: "hsl(var(--chart-1))",
-                                    },
-                                }}
-                                className="aspect-auto h-[250px] w-full"
-                            >
-                                <BarChart
-                                    data={getTopRestaurantsData()}
-                                    layout="vertical"
-                                    margin={{
-                                        left: 0,
+                            <div className="grid gap-4 md:grid-cols-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="restaurant">Ресторан</Label>
+                                    <Select value={filterRestaurant} onValueChange={setFilterRestaurant}>
+                                        <SelectTrigger id="restaurant">
+                                            <SelectValue placeholder="Все рестораны" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Все рестораны</SelectItem>
+                                            {restaurants.map(r => (
+                                                <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="status">Статус</Label>
+                                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                                        <SelectTrigger id="status">
+                                            <SelectValue placeholder="Все статусы" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Все статусы</SelectItem>
+                                            <SelectItem value="confirmed">Подтверждено</SelectItem>
+                                            <SelectItem value="cancelled">Отменено</SelectItem>
+                                            <SelectItem value="completed">Завершено</SelectItem>
+                                            <SelectItem value="no_show">Не пришли</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="dateFrom">Дата от</Label>
+                                    <Input
+                                        id="dateFrom"
+                                        type="date"
+                                        value={filterDateFrom}
+                                        onChange={(e) => setFilterDateFrom(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="dateTo">Дата до</Label>
+                                    <Input
+                                        id="dateTo"
+                                        type="date"
+                                        value={filterDateTo}
+                                        onChange={(e) => setFilterDateTo(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="mt-4 flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setFilterRestaurant('');
+                                        setFilterStatus('');
+                                        setFilterDateFrom('');
+                                        setFilterDateTo('');
                                     }}
                                 >
-                                    <YAxis
-                                        dataKey="name"
-                                        type="category"
-                                        tickLine={false}
-                                        tickMargin={10}
-                                        axisLine={false}
-                                        tickFormatter={(value) => value.slice(0, 15)}
-                                    />
-                                    <XAxis type="number" hide />
-                                    <ChartTooltip
-                                        cursor={false}
-                                        content={(props: any) => <ChartTooltipContent {...props} hideLabel />}
-                                    />
-                                    <Bar
-                                        dataKey="bookings"
-                                        fill="var(--color-bookings)"
-                                        radius={5}
-                                    />
-                                </BarChart>
-                            </ChartContainer>
+                                    Сбросить
+                                </Button>
+                                <Button onClick={exportToCSV} className="ml-auto">
+                                    📥 Экспорт CSV
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
-                </div>
 
-
-
-
-
-                {/* Filters Card */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Фильтры</CardTitle>
-                        <CardDescription>
-                            Используйте фильтры для поиска конкретных бронирований
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid gap-4 md:grid-cols-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="restaurant">Ресторан</Label>
-                                <Select value={filterRestaurant} onValueChange={setFilterRestaurant}>
-                                    <SelectTrigger id="restaurant">
-                                        <SelectValue placeholder="Все рестораны" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Все рестораны</SelectItem>
-                                        {restaurants.map(r => (
-                                            <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="status">Статус</Label>
-                                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                                    <SelectTrigger id="status">
-                                        <SelectValue placeholder="Все статусы" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Все статусы</SelectItem>
-                                        <SelectItem value="confirmed">Подтверждено</SelectItem>
-                                        <SelectItem value="cancelled">Отменено</SelectItem>
-                                        <SelectItem value="completed">Завершено</SelectItem>
-                                        <SelectItem value="no_show">Не пришли</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="dateFrom">Дата от</Label>
-                                <Input
-                                    id="dateFrom"
-                                    type="date"
-                                    value={filterDateFrom}
-                                    onChange={(e) => setFilterDateFrom(e.target.value)}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="dateTo">Дата до</Label>
-                                <Input
-                                    id="dateTo"
-                                    type="date"
-                                    value={filterDateTo}
-                                    onChange={(e) => setFilterDateTo(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="mt-4 flex gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={() => {
-                                    setFilterRestaurant('');
-                                    setFilterStatus('');
-                                    setFilterDateFrom('');
-                                    setFilterDateTo('');
-                                }}
-                            >
-                                Сбросить
-                            </Button>
-                            <Button onClick={exportToCSV} className="ml-auto">
-                                📥 Экспорт CSV
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Bookings Table */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Список броней</CardTitle>
-                        <CardDescription>
-                            Всего найдено: {filteredBookings.length} бронирований
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[80px]">ID</TableHead>
-                                    <TableHead>Гость</TableHead>
-                                    <TableHead>Ресторан</TableHead>
-                                    <TableHead>Телефон</TableHead>
-                                    <TableHead>Дата/Время</TableHead>
-                                    <TableHead>Гостей</TableHead>
-                                    <TableHead>Скидка</TableHead>
-                                    <TableHead>Статус</TableHead>
-                                    <TableHead className="text-right">Действия</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredBookings.map((booking) => (
-                                    <TableRow key={booking.id}>
-                                        <TableCell className="font-mono text-xs">
-                                            #{booking.id}
-                                        </TableCell>
-                                        <TableCell className="font-medium">
-                                            {booking.guest_name || 'Не указано'}
-                                        </TableCell>
-                                        <TableCell>{booking.restaurant_name}</TableCell>
-                                        <TableCell>
-                                            <a
-                                                href={`tel:${booking.guest_phone}`}
-                                                className="text-info hover:underline"
-                                            >
-                                                {booking.guest_phone || 'Не указан'}
-                                            </a>
-                                        </TableCell>
-                                        <TableCell className="text-sm">
-                                            {booking.booking_datetime?.substring(0, 16).replace('T', ' ') || '-'}
-                                        </TableCell>
-                                        <TableCell>{booking.party_size || 2}</TableCell>
-                                        <TableCell>
-                                            {Number(booking.discount_applied) > 0 ? (
-                                                <Badge variant="secondary">-{booking.discount_applied}%</Badge>
-                                            ) : (
-                                                <span className="text-muted-foreground">—</span>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Select
-                                                value={booking.status || 'confirmed'}
-                                                onValueChange={(value) => updateStatus(booking.id, value)}
-                                            >
-                                                <SelectTrigger className="w-[140px]">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="confirmed">✅ Подтверждено</SelectItem>
-                                                    <SelectItem value="cancelled">❌ Отменено</SelectItem>
-                                                    <SelectItem value="completed">✔️ Завершено</SelectItem>
-                                                    <SelectItem value="no_show">⚠️ Не пришли</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => setSelectedBooking(booking)}
-                                                >
-                                                    👁️ Подробнее
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => deleteBooking(booking.id)}
-                                                    className="text-error hover:text-error hover:bg-error-light"
-                                                >
-                                                    🗑️ Удалить
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-
-                        {filteredBookings.length === 0 && (
-                            <div className="flex flex-col items-center justify-center py-12 text-center">
-                                <CalendarDays className="h-12 w-12 text-muted-foreground mb-4" />
-                                <h3 className="text-lg font-semibold">Нет броней</h3>
-                                <p className="text-sm text-muted-foreground">
-                                    {bookings.length === 0
-                                        ? 'Пока нет бронирований в системе'
-                                        : 'По заданным фильтрам ничего не найдено'}
-                                </p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </main>
-
-            {/* Modal для деталей брони (добавь позже) */}
-            {selectedBooking && (
-                <div
-                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-                    onClick={() => setSelectedBooking(null)}
-                >
-                    <Card className="w-full max-w-2xl m-4" onClick={(e) => e.stopPropagation()}>
+                    {/* Bookings Table */}
+                    <Card>
                         <CardHeader>
-                            <CardTitle>Детали брони #{selectedBooking.id}</CardTitle>
+                            <CardTitle>Список броней</CardTitle>
+                            <CardDescription>
+                                Всего найдено: {filteredBookings.length} бронирований
+                            </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label>Гость</Label>
-                                    <p className="text-sm font-semibold">{selectedBooking.guest_name}</p>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[80px]">ID</TableHead>
+                                        <TableHead>Гость</TableHead>
+                                        <TableHead>Ресторан</TableHead>
+                                        <TableHead>Телефон</TableHead>
+                                        <TableHead>Дата/Время</TableHead>
+                                        <TableHead>Гостей</TableHead>
+                                        <TableHead>Скидка</TableHead>
+                                        <TableHead>Статус</TableHead>
+                                        <TableHead className="text-right">Действия</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredBookings.map((booking) => (
+                                        <TableRow key={booking.id}>
+                                            <TableCell className="font-mono text-xs">
+                                                #{booking.id}
+                                            </TableCell>
+                                            <TableCell className="font-medium">
+                                                {booking.guest_name || 'Не указано'}
+                                            </TableCell>
+                                            <TableCell>{booking.restaurant_name}</TableCell>
+                                            <TableCell>
+                                                <a
+                                                    href={`tel:${booking.guest_phone}`}
+                                                    className="text-info hover:underline"
+                                                >
+                                                    {booking.guest_phone || 'Не указан'}
+                                                </a>
+                                            </TableCell>
+                                            <TableCell className="text-sm">
+                                                {booking.booking_datetime?.substring(0, 16).replace('T', ' ') || '-'}
+                                            </TableCell>
+                                            <TableCell>{booking.party_size || 2}</TableCell>
+                                            <TableCell>
+                                                {Number(booking.discount_applied) > 0 ? (
+                                                    <Badge variant="secondary">-{booking.discount_applied}%</Badge>
+                                                ) : (
+                                                    <span className="text-muted-foreground">—</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Select
+                                                    value={booking.status || 'confirmed'}
+                                                    onValueChange={(value) => updateStatus(booking.id, value)}
+                                                >
+                                                    <SelectTrigger className="w-[140px]">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="confirmed">✅ Подтверждено</SelectItem>
+                                                        <SelectItem value="cancelled">❌ Отменено</SelectItem>
+                                                        <SelectItem value="completed">✔️ Завершено</SelectItem>
+                                                        <SelectItem value="no_show">⚠️ Не пришли</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => setSelectedBooking(booking)}
+                                                    >
+                                                        👁️ Подробнее
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => deleteBooking(booking.id)}
+                                                        className="text-error hover:text-error hover:bg-error-light"
+                                                    >
+                                                        🗑️ Удалить
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+
+                            {filteredBookings.length === 0 && (
+                                <div className="flex flex-col items-center justify-center py-12 text-center">
+                                    <CalendarDays className="h-12 w-12 text-muted-foreground mb-4" />
+                                    <h3 className="text-lg font-semibold">Нет броней</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        {bookings.length === 0
+                                            ? 'Пока нет бронирований в системе'
+                                            : 'По заданным фильтрам ничего не найдено'}
+                                    </p>
                                 </div>
-                                <div>
-                                    <Label>Телефон</Label>
-                                    <p className="text-sm">{selectedBooking.guest_phone}</p>
-                                </div>
-                                <div>
-                                    <Label>Email</Label>
-                                    <p className="text-sm">{selectedBooking.guest_email || '—'}</p>
-                                </div>
-                                <div>
-                                    <Label>Ресторан</Label>
-                                    <p className="text-sm font-semibold">{selectedBooking.restaurant_name}</p>
-                                </div>
-                                <div>
-                                    <Label>Дата/Время</Label>
-                                    <p className="text-sm">{selectedBooking.booking_datetime?.substring(0, 16).replace('T', ' ')}</p>
-                                </div>
-                                <div>
-                                    <Label>Количество гостей</Label>
-                                    <p className="text-sm">{selectedBooking.party_size}</p>
-                                </div>
-                                {selectedBooking.special_requests && (
-                                    <div className="col-span-2">
-                                        <Label>Особые пожелания</Label>
-                                        <p className="text-sm">{selectedBooking.special_requests}</p>
-                                    </div>
-                                )}
-                            </div>
-                            <Button onClick={() => setSelectedBooking(null)} className="w-full">
-                                Закрыть
-                            </Button>
+                            )}
                         </CardContent>
                     </Card>
-                </div>
-            )}
-        </PageHeader>
+                </main>
+
+                {/* Modal для деталей брони (добавь позже) */}
+                {selectedBooking && (
+                    <div
+                        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                        onClick={() => setSelectedBooking(null)}
+                    >
+                        <Card className="w-full max-w-2xl m-4" onClick={(e) => e.stopPropagation()}>
+                            <CardHeader>
+                                <CardTitle>Детали брони #{selectedBooking.id}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label>Гость</Label>
+                                        <p className="text-sm font-semibold">{selectedBooking.guest_name}</p>
+                                    </div>
+                                    <div>
+                                        <Label>Телефон</Label>
+                                        <p className="text-sm">{selectedBooking.guest_phone}</p>
+                                    </div>
+                                    <div>
+                                        <Label>Email</Label>
+                                        <p className="text-sm">{selectedBooking.guest_email || '—'}</p>
+                                    </div>
+                                    <div>
+                                        <Label>Ресторан</Label>
+                                        <p className="text-sm font-semibold">{selectedBooking.restaurant_name}</p>
+                                    </div>
+                                    <div>
+                                        <Label>Дата/Время</Label>
+                                        <p className="text-sm">{selectedBooking.booking_datetime?.substring(0, 16).replace('T', ' ')}</p>
+                                    </div>
+                                    <div>
+                                        <Label>Количество гостей</Label>
+                                        <p className="text-sm">{selectedBooking.party_size}</p>
+                                    </div>
+                                    {selectedBooking.special_requests && (
+                                        <div className="col-span-2">
+                                            <Label>Особые пожелания</Label>
+                                            <p className="text-sm">{selectedBooking.special_requests}</p>
+                                        </div>
+                                    )}
+                                </div>
+                                <Button onClick={() => setSelectedBooking(null)} className="w-full">
+                                    Закрыть
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+            </PageHeader>
+        </main>
     );
 }

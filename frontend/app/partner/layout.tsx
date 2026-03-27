@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@/app/globals.css";
+import { AuthHeaderPartner } from "@/components/headers/auth-header-partner";
 import { PartnerHeader } from "@/components/headers/partner-header";
 
 export const metadata: Metadata = {

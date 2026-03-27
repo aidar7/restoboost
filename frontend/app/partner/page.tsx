@@ -1,14 +1,13 @@
+// app/partner/page.tsx - ПОЛНАЯ ВЕРСИЯ С ДАТАМИ
 'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
-
-
+import { useAuth } from '@/app/context/AuthContext';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000/api';
-
 
 type Restaurant = {
   id: number;
@@ -23,29 +22,48 @@ type Restaurant = {
   photos?: string[];
 };
 
-export default function AdminPage() {
+export default function PartnerPage() {
   const router = useRouter();
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [loadingList, setLoadingList] = useState(false);
-  const [errorList, setErrorList] = useState('');
+  const { user, token } = useAuth();
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string[]>([]);
 
-
-  const loadRestaurants = async () => {
+  // Загрузить ресторан партнёра (только СВОЙ ресторан)
+  const loadPartnerRestaurant = async () => {
     try {
-      setLoadingList(true);
-      setErrorList('');
-      const res = await fetch(`${API_BASE}/restaurants`);
-      if (!res.ok) throw new Error('Failed to load restaurants');
-      const data = (await res.json()) as Restaurant[];
-      setRestaurants(data);
+      setLoading(true);
+      setError('');
+      
+      if (!user?.id) {
+        setError('Пользователь не авторизован');
+        return;
+      }
+
+      const res = await fetch(`${API_BASE}/restaurants/partner/${user.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        if (res.status === 404) {
+          setError('');
+          setRestaurant(null);
+          return;
+        }
+        throw new Error('Failed to load restaurant');
+      }
+      const data = (await res.json()) as Restaurant;
+      setRestaurant(data);
     } catch (e) {
       console.error(e);
-      setErrorList('Ошибка при загрузке списка ресторанов');
+      setError('Ошибка при загрузке ресторана');
     } finally {
-      setLoadingList(false);
+      setLoading(false);
     }
   };
 
@@ -53,11 +71,9 @@ export default function AdminPage() {
     const files = Array.from(e.currentTarget.files || []);
     setSelectedPhotos(files);
 
-    // Создаем превью
     const previews = files.map(file => URL.createObjectURL(file));
     setPhotoPreview(previews);
   };
-
 
   const handleCreateRestaurant = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -69,17 +85,25 @@ export default function AdminPage() {
     const cuisines = formData.getAll('cuisine') as string[];
     formData.delete('cuisine');
     formData.append('cuisine', JSON.stringify(cuisines));
+    
     // Добавляем фото
     selectedPhotos.forEach((photo) => {
       formData.append('photos', photo);
     });
 
+    // ✅ Добавляем owner_id партнёра (ВАЖНО!)
+    if (user?.id) {
+      formData.append('owner_id', user.id.toString());
+    }
 
     try {
       setUploadingPhotos(true);
       const res = await fetch(`${API_BASE}/restaurants/`, {
         method: 'POST',
         body: formData,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!res.ok) {
@@ -88,31 +112,33 @@ export default function AdminPage() {
         alert(`Ошибка при создании ресторана: ${err?.detail || JSON.stringify(err)}`);
         return;
       }
-      // ✅ ДОБАВЬ ЛОГИРОВАНИЕ:
+
       const data = await res.json();
       console.log('✅ Restaurant created successfully:', data);
       alert('✅ Ресторан успешно добавлен!');
 
-      alert('✅ Ресторан успешно создан с фото!');
       form.reset();
       setSelectedPhotos([]);
       setPhotoPreview([]);
-      await loadRestaurants();
+      await loadPartnerRestaurant();
     } catch (error) {
       console.error(error);
       alert('Ошибка сети при создании ресторана');
     } finally {
       setUploadingPhotos(false);
     }
-
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(`Удалить ресторан ID ${id}?`)) return;
+  const handleDelete = async () => {
+    if (!restaurant) return;
+    if (!confirm(`Удалить ресторан "${restaurant.name}"?`)) return;
 
     try {
-      const res = await fetch(`${API_BASE}/restaurants/${id}`, {
+      const res = await fetch(`${API_BASE}/restaurants/${restaurant.id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!res.ok) {
@@ -121,21 +147,27 @@ export default function AdminPage() {
         return;
       }
 
-      await loadRestaurants();
+      alert('✅ Ресторан успешно удалён!');
+      await loadPartnerRestaurant();
     } catch (e) {
       console.error(e);
       alert('Ошибка сети при удалении ресторана');
     }
   };
 
-  const handleQuickEdit = async (r: Restaurant) => {
-    const newName = prompt('Новое название ресторана', r.name);
-    if (!newName || newName === r.name) return;
+  const handleQuickEdit = async () => {
+    if (!restaurant) return;
+    
+    const newName = prompt('Новое название ресторана', restaurant.name);
+    if (!newName || newName === restaurant.name) return;
 
     try {
-      const res = await fetch(`${API_BASE}/restaurants/${r.id}`, {
+      const res = await fetch(`${API_BASE}/restaurants/${restaurant.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ name: newName }),
       });
 
@@ -145,7 +177,7 @@ export default function AdminPage() {
         return;
       }
 
-      await loadRestaurants();
+      await loadPartnerRestaurant();
     } catch (e) {
       console.error(e);
       alert('Ошибка сети при обновлении ресторана');
@@ -153,24 +185,23 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    loadRestaurants();
-  }, []);
+    loadPartnerRestaurant();
+  }, [user?.id, token]);
 
   return (
     <main className="container mx-auto max-w-5xl px-4 py-8">
       <PageHeader
-        title="Управление ресторанами"
+        title="Мой ресторан"
         breadcrumbs={[
-          { label: 'Админ' },
-          { label: 'Рестораны' }
+          { label: 'Партнёр' },
+          { label: 'Управление' }
         ]}
-      >
+      />
 
-        {/* Add Restaurant Form */}
-
+      {/* Если ресторана нет - форма создания */}
+      {!restaurant && (
         <div className="bg-card rounded-xl shadow-md p-6 md:p-8 mb-8 border border-border">
-
-          {/* Add Restaurant Form */}
+          <h2 className="text-2xl font-bold text-foreground mb-6">Добавить мой ресторан</h2>
 
           <form
             id="addRestaurantForm"
@@ -240,7 +271,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* === ↓↓↓ НОВОЕ ПОЛЕ: ГОРОД ↓↓↓ === */}
+            {/* Город */}
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">
                 Город <span className="text-error">*</span>
@@ -259,7 +290,6 @@ export default function AdminPage() {
                 Выберите город, в котором находится ресторан
               </p>
             </div>
-            {/* === ↑↑↑ КОНЕЦ НОВОГО ПОЛЯ ↑↑↑ === */}
 
             {/* Cuisine Tags */}
             <div>
@@ -306,7 +336,7 @@ export default function AdminPage() {
                   name="address"
                   required
                   className="w-full border-2 border-input focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg p-3 transition outline-none"
-                  placeholder="ул. Пушкина, 10, Алматы"
+                  placeholder="ул. Пушкина, 10, Астана"
                 />
               </div>
 
@@ -390,8 +420,7 @@ export default function AdminPage() {
               )}
             </div>
 
-
-            {/* Discount & Time Settings */}
+            {/* ✅ Discount & Time Settings */}
             <div className="bg-gradient-to-br from-warning-light to-warning-light/50 p-5 rounded-lg border-2 border-warning/30">
               <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                 <span>⏰</span> Настройки акции
@@ -485,109 +514,75 @@ export default function AdminPage() {
             <div className="flex justify-end pt-4 border-t border-border">
               <button
                 type="submit"
-                className="bg-success hover:bg-success/90 text-white font-semibold px-6 py-2.5 rounded-lg transition shadow-sm"
+                disabled={uploadingPhotos}
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold px-8 py-3 rounded-lg transition shadow-lg text-lg"
               >
-                Сохранить ресторан
+                {uploadingPhotos ? '⏳ Загрузка...' : '✅ Создать ресторан'}
               </button>
             </div>
           </form>
         </div>
+      )}
 
-        {/* Restaurant List */}
+      {/* Если ресторан есть - показываем его */}
+      {restaurant && (
         <div className="bg-card rounded-xl shadow-md p-6 md:p-8 border border-border">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-foreground">Список ресторанов</h2>
+            <h2 className="text-2xl font-bold text-foreground">Мой ресторан</h2>
             <button
-              onClick={loadRestaurants}
+              onClick={loadPartnerRestaurant}
               className="text-sm text-primary hover:text-primary/80 underline"
             >
               Обновить
             </button>
           </div>
 
-          {loadingList && (
-            <p className="text-sm text-muted-foreground mt-4">Загрузка ресторанов...</p>
+          {loading && (
+            <p className="text-sm text-muted-foreground">Загрузка...</p>
           )}
 
-          {errorList && (
-            <p className="text-sm text-error mt-4">{errorList}</p>
+          {error && (
+            <p className="text-sm text-error">{error}</p>
           )}
 
-          {!loadingList && !errorList && restaurants.length === 0 && (
-            <div className="mt-6 p-6 border border-dashed border-border rounded-lg text-center">
-              <div className="text-4xl mb-2">🍽️</div>
-              <p className="font-semibold mb-1">Рестораны пока не добавлены</p>
-              <p className="text-sm text-muted-foreground">
-                Заполните форму выше, чтобы добавить первый ресторан
-              </p>
-            </div>
-          )}
-
-          {!loadingList && restaurants.length > 0 && (
-            <div className="mt-6 space-y-3">
-              {restaurants.map((r) => (
-                <div
-                  key={r.id}
-                  className="flex flex-col md:flex-row md:items-center justify-between gap-2 p-4 border border-border rounded-lg hover:bg-gray-50"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{r.name}</span>
-                      {r.photos && r.photos.length > 0 ? (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-success-light text-success font-medium">
-                          📷 Есть фото ({r.photos.length})
-                        </span>
-                      ) : (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-error-light text-error font-medium">
-                          📷 Нет фото
-                        </span>
-                      )}
-
-
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-gray-50 text-muted-foreground">
-                        {r.category}
+          {!loading && restaurant && (
+            <div className="space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 border border-border rounded-lg hover:bg-gray-50">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xl font-semibold">{restaurant.name}</span>
+                    {restaurant.photos && restaurant.photos.length > 0 ? (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-success-light text-success font-medium">
+                        📷 Есть фото ({restaurant.photos.length})
                       </span>
-                      {r.city && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-info-light text-info font-medium">
-                          🏙️ {r.city}
-                        </span>
-                      )}
-                      {r.rating && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-warning-light text-warning">
-                          ⭐ {r.rating}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {r.address || 'Адрес не указан'} · {r.phone || 'Телефон не указан'}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {r.avg_check && (
-                      <span className="text-xs text-muted-foreground">
-                        💰 {r.avg_check} ₸
+                    ) : (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-error-light text-error font-medium">
+                        📷 Нет фото
                       </span>
                     )}
-                    <button
-                      className="px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition font-medium text-sm flex items-center gap-2"
-                      onClick={() => router.push(`/admin/restaurants/${r.id}`)}
-                    >
-                      ✏️ Редактировать
-                    </button>
-                    <button
-                      className="px-4 py-2 rounded-lg bg-error text-white hover:bg-error/90 transition font-medium text-sm flex items-center gap-2"
-                      onClick={() => handleDelete(r.id)}
-                    >
-                      🗑️ Удалить
-                    </button>
                   </div>
+                  <p className="text-sm text-muted-foreground mb-2">{restaurant.category}</p>
+                  <p className="text-sm text-muted-foreground">{restaurant.address}</p>
                 </div>
-              ))}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleQuickEdit}
+                    className="px-3 py-1 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition"
+                  >
+                    ✏️ Редактировать
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="px-3 py-1 text-sm bg-error text-white rounded-lg hover:bg-error/90 transition"
+                  >
+                    🗑️ Удалить
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
-      </PageHeader>
+      )}
     </main>
   );
 }

@@ -44,7 +44,7 @@ export function PartnerHeader() {
             </Button>
 
             <Button variant="ghost" size="sm" asChild className="text-green-700 hover:bg-green-100">
-              <Link href="/partner/restaurant">
+              <Link href="/partner">
                 <Utensils className="mr-2 h-4 w-4" />
                 Мой ресторан
               </Link>
@@ -59,13 +59,6 @@ export function PartnerHeader() {
               <Link href="/partner/scan">
                 <Camera className="mr-2 h-4 w-4" />
                 Сканировать
-              </Link>
-            </Button>
-
-            <Button variant="ghost" size="sm" asChild className="text-green-700 hover:bg-green-100">
-              <Link href="/partner/settings">
-                <Settings className="mr-2 h-4 w-4" />
-                Настройки
               </Link>
             </Button>
 

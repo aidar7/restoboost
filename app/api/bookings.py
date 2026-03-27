@@ -598,6 +598,106 @@ async def verify_booking_qr(data: dict):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Ошибка проверки брони: {str(e)}")
 
+
+@router.post("/partner/verify-qr")
+async def verify_booking_qr_partner(data: dict, request: Request):
+    """Verify booking by QR code (только для своего ресторана партнера)"""
+    try:
+        # 1️⃣ Получаем текущего пользователя из токена
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Нет токена авторизации")
+        
+        token = auth_header.replace("Bearer ", "")
+        # Здесь нужно декодировать токен и получить user_id
+        # Предполагаем, что есть функция get_current_user
+        current_user = await get_current_user(token)  # ← Твоя функция
+        
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Неавторизованный доступ")
+        
+        # 2️⃣ Получаем ресторан партнера
+        restaurant_response = await db.get(
+            "restaurants",
+            filters={"owner_id": f"eq.{current_user['id']}"}
+        )
+        
+        if not restaurant_response or len(restaurant_response) == 0:
+            raise HTTPException(status_code=403, detail="У вас нет ресторана")
+        
+        restaurant_id = restaurant_response[0]["id"]
+        
+        # 3️⃣ Получаем бронь ПО КОДУ И РЕСТОРАНУ (ФИЛЬТР!)
+        code = data.get("code", "").upper().strip()
+        
+        if not code:
+            raise HTTPException(status_code=400, detail="Код подтверждения не указан")
+        
+        booking_response = await db.get(
+            "bookings",
+            filters={
+                "confirmation_code": f"eq.{code}",
+                "restaurant_id": f"eq.{restaurant_id}"  # ← КЛЮЧЕВОЙ ФИЛЬТР!
+            }
+        )
+        
+        if not booking_response or len(booking_response) == 0:
+            raise HTTPException(status_code=404, detail="Бронь не найдена в вашем ресторане")
+        
+        booking_data = booking_response[0]
+        
+        # 4️⃣ Остальной код как в админе...
+        if booking_data.get("status") == "completed":
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Эта бронь уже была использована"
+            )
+        
+        if booking_data.get("status") != "confirmed":
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Бронь имеет статус: {booking_data.get('status')}"
+            )
+        
+        restaurant_data = restaurant_response[0]
+        discount = booking_data.get("discount_applied", 0)
+        
+        now = datetime.utcnow().isoformat()
+        await db.update(
+            "bookings",
+            filters={"id": f"eq.{booking_data['id']}"},
+            data={
+                "status": "completed",
+                "completed_at": now,
+                "discount_applied": discount,
+                "updated_at": now
+            }
+        )
+        
+        return {
+            "success": True,
+            "booking": {
+                "id": booking_data["id"],
+                "guest_name": booking_data["guest_name"],
+                "restaurant_name": restaurant_data["name"],
+                "booking_datetime": booking_data["booking_datetime"],
+                "party_size": booking_data["party_size"],
+                "discount_applied": discount,
+                "status": "completed",
+                "completed_at": now
+            },
+            "discount": discount,
+            "message": f"Бронь подтверждена! Применена скидка {discount}%"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error verifying booking: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка проверки брони: {str(e)}")
+
+
+
 # ✅ НОВЫЕ ENDPOINTS ДЛЯ СКИДОК
 
 @router.get("/discount_rules")
@@ -618,6 +718,24 @@ async def get_discount_rules(restaurant_id: int = Query(...)):
         traceback.print_exc()
         return []
 
+@router.get("/restaurant/{restaurant_id}")
+async def get_bookings_by_restaurant(restaurant_id: int):
+    """Получить все брони ресторана"""
+    try:
+        bookings = await db.get(
+            "bookings",
+            filters={"restaurant_id": f"eq.{restaurant_id}"},
+            limit=500
+        )
+        
+        if not bookings:
+            return []
+        
+        return bookings
+    
+    except Exception as e:
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка получения бронирований")
 
 
 

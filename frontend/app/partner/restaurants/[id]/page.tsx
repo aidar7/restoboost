@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-
-
+import { useAuth } from '@/app/context/AuthContext';
 
 const API_BASE = 'http://localhost:8000/api';
 
@@ -60,10 +59,9 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
   );
 };
 
-export default function AdminRestaurantEditPage() {
-  const params = useParams<{ id: string }>();
+export default function PartnerRestaurantEditPage() {
   const router = useRouter();
-  const restaurantId = Number(params.id);
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -85,41 +83,44 @@ export default function AdminRestaurantEditPage() {
     description: 'на все меню',
   });
   const [serviceId, setServiceId] = useState('');
-  // --- ↓ ЗАМЕНИТЕ ВСЕ СТАРЫЕ useState ДЛЯ ФОТО НА ЭТИ ↓ ---
-  const [existingPhotos, setExistingPhotos] = useState<string[]>([]); // URL уже загруженных фото
-  const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);     // Новые файлы для загрузки
-  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);    // Превью для новых файлов
-  const [photosToDelete, setPhotosToDelete] = useState<string[]>([]); // URL старых фото для удаления
-  // --- ↑ КОНЕЦ ЗАМЕНЫ ↑ ---
+  
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+  const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [photosToDelete, setPhotosToDelete] = useState<string[]>([]);
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.currentTarget.files || []);
     if (files.length === 0) return;
 
-    // Добавляем новые файлы к уже выбранным
     setSelectedPhotos(prev => [...prev, ...files]);
-
-    // Создаем и добавляем новые превью
     const newPreviews = files.map(file => URL.createObjectURL(file));
     setPhotoPreviews(prev => [...prev, ...newPreviews]);
-
-    // Очищаем инпут, чтобы можно было выбрать те же файлы снова
     e.currentTarget.value = '';
   };
 
-
+  // 🔑 КЛЮЧЕВОЕ ОТЛИЧИЕ: Загружаем ресторан партнера БЕЗ ID
   useEffect(() => {
     const load = async () => {
-      console.log('🔍 START: Загружаем ресторан ID:', restaurantId);
+      console.log('🔍 START: Загружаем ресторан партнера');
       try {
         setLoading(true);
-        console.log('✅ Loading set to TRUE');
         setError('');
 
-        const res = await fetch(`${API_BASE}/restaurants/${restaurantId}`);
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE}/restaurants/partner/${user?.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         console.log('📡 Ответ от API:', res.status, res.ok);
 
         if (!res.ok) {
+          if (res.status === 404) {
+            setError('У вас нет ресторана');
+            setToast({ message: 'У вас нет ресторана', type: 'error' });
+            return;
+          }
           throw new Error('Failed to load restaurant');
         }
 
@@ -133,31 +134,25 @@ export default function AdminRestaurantEditPage() {
       } catch (e) {
         console.error('❌ ОШИБКА:', e);
         setError('Ошибка при загрузке ресторана');
-        console.log('✅ Error set');
         setToast({ message: 'Ошибка при загрузке ресторана', type: 'error' });
       } finally {
         setLoading(false);
-        console.log('✅ Loading set to FALSE');
       }
     };
 
-    console.log('🔍 useEffect triggered, restaurantId:', restaurantId);
-    if (Number.isFinite(restaurantId)) {
-      console.log('✅ ID валиден, загружаем');
+    if (user?.id) {
       load();
-    } else {
-      console.log('❌ ID невалиден:', restaurantId);
     }
-  }, [restaurantId]);
+  }, [user?.id]);
 
   // Загрузить скидки
   useEffect(() => {
-    if (!restaurantId) return;
+    if (!restaurant?.id) return;
 
     const loadDiscounts = async () => {
       try {
         setLoadingDiscounts(true);
-        const res = await fetch(`${API_BASE}/bookings/discount_rules?restaurant_id=${restaurantId}`);
+        const res = await fetch(`${API_BASE}/bookings/discount_rules?restaurant_id=${restaurant.id}`);
         if (!res.ok) throw new Error('Failed to load discounts');
         const data = await res.json();
         setDiscounts(data);
@@ -169,9 +164,7 @@ export default function AdminRestaurantEditPage() {
     };
 
     loadDiscounts();
-  }, [restaurantId]);
-
-  // === ↓↓↓ ПОЛНОСТЬЮ ЗАМЕНИТЕ СТАРУЮ ФУНКЦИЮ handleSave НА ЭТУ ↓↓↓ ===
+  }, [restaurant?.id]);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -179,28 +172,27 @@ export default function AdminRestaurantEditPage() {
 
     setSaving(true);
 
-    // Создаем FormData из формы
     const formData = new FormData(e.currentTarget);
 
-    // Удаляем поле 'cuisine', так как мы его обработаем вручную
     formData.delete('cuisine');
-    // Собираем значения из чекбоксов и добавляем как JSON-строку
     const cuisines = Array.from(e.currentTarget.querySelectorAll('input[name="cuisine"]:checked'))
       .map(el => (el as HTMLInputElement).value);
     formData.append('cuisine', JSON.stringify(cuisines));
 
-    // Добавляем новые выбранные файлы
     selectedPhotos.forEach((photo) => {
       formData.append('photos', photo);
     });
 
-    // Добавляем список URL старых фото для удаления
     formData.append('photos_to_delete', JSON.stringify(photosToDelete));
 
     try {
-      const res = await fetch(`${API_BASE}/restaurants/${restaurantId}`, {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/restaurants/${restaurant.id}`, {
         method: 'PUT',
-        body: formData, // Отправляем FormData
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!res.ok) {
@@ -211,7 +203,7 @@ export default function AdminRestaurantEditPage() {
       setToast({ message: '✅ Ресторан успешно обновлен!', type: 'success' });
 
       setTimeout(() => {
-        router.push('/admin');
+        router.push('/partner');
       }, 2000);
 
     } catch (e) {
@@ -221,9 +213,6 @@ export default function AdminRestaurantEditPage() {
       setSaving(false);
     }
   };
-
-  // === ↑↑↑ КОНЕЦ ЗАМЕНЫ ↑↑↑ ===
-
 
   const handleSaveDiscount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -237,7 +226,7 @@ export default function AdminRestaurantEditPage() {
       setSaving(true);
 
       const formData = new FormData();
-      formData.append('restaurant_id', String(restaurantId));
+      formData.append('restaurant_id', String(restaurant?.id));
       formData.append('service_id', serviceId || '');
       formData.append('discount', String(discountForm.discount || '10'));
       formData.append('time_start', discountForm.time_start);
@@ -246,6 +235,7 @@ export default function AdminRestaurantEditPage() {
       formData.append('valid_to', discountForm.valid_to);
       formData.append('description', discountForm.description);
 
+      const token = localStorage.getItem('token');
       const method = editingDiscount ? 'PUT' : 'POST';
       const url = editingDiscount
         ? `${API_BASE}/bookings/discount_rules/${editingDiscount.id}`
@@ -254,6 +244,9 @@ export default function AdminRestaurantEditPage() {
       const res = await fetch(url, {
         method,
         body: formData,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!res.ok) {
@@ -277,6 +270,13 @@ export default function AdminRestaurantEditPage() {
         description: 'на все меню',
       });
 
+      // Перезагрузить скидки
+      const reloadRes = await fetch(`${API_BASE}/bookings/discount_rules?restaurant_id=${restaurant?.id}`);
+      if (reloadRes.ok) {
+        const data = await reloadRes.json();
+        setDiscounts(data);
+      }
+
     } catch (e) {
       console.error(e);
       setToast({ message: `❌ Ошибка: ${e instanceof Error ? e.message : 'неизвестная ошибка'}`, type: 'error' });
@@ -285,24 +285,24 @@ export default function AdminRestaurantEditPage() {
     }
   };
 
-
-
-
   const handleDeleteDiscount = async (discountId: number) => {
     if (!confirm('Удалить эту скидку?')) return;
 
     try {
       setSaving(true);
-      const res = await fetch(`${API_BASE}/bookings/discount_rules/${discountId}?restaurant_id=${restaurantId}`, {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/bookings/discount_rules/${discountId}?restaurant_id=${restaurant?.id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!res.ok) throw new Error('Failed to delete discount');
 
       setToast({ message: '✅ Скидка удалена!', type: 'success' });
 
-      // Перезагрузить скидки
-      const reloadRes = await fetch(`${API_BASE}/bookings/discount_rules?restaurant_id=${restaurantId}`);
+      const reloadRes = await fetch(`${API_BASE}/bookings/discount_rules?restaurant_id=${restaurant?.id}`);
       if (reloadRes.ok) {
         const data = await reloadRes.json();
         setDiscounts(data);
@@ -315,28 +315,19 @@ export default function AdminRestaurantEditPage() {
     }
   };
 
-
-  console.log('🔄 RENDER: loading =', loading, ', restaurant =', restaurant ? restaurant.name : 'null', ', error =', error);
-  // ✅ LOADING STATE (строка 190-199)
   if (loading) {
     return (
       <div className="bg-gradient-to-br from-warning-light via-white to-warning-light min-h-screen flex items-center justify-center p-4">
         <div className="text-center max-w-md">
-          {/* Карточка */}
           <div className="bg-card rounded-2xl shadow-2xl p-8 border border-warning-light">
-            {/* Иконка */}
             <div className="mb-6">
               <div className="inline-block relative">
                 <div className="text-7xl animate-pulse">🍽️</div>
                 <div className="absolute inset-0 animate-spin rounded-full h-20 w-20 border-2 border-transparent border-t-pink-500 border-r-pink-500"></div>
               </div>
             </div>
-
-            {/* Текст */}
             <h2 className="text-2xl font-bold text-foreground mb-2">Загружаем ресторан</h2>
             <p className="text-muted-foreground mb-6">Сейчас покажем вам все детали...</p>
-
-            {/* Прогресс бар */}
             <div className="w-full bg-gray-50 rounded-full h-1 overflow-hidden">
               <div className="bg-gradient-to-r from-warning to-rose-500 h-full animate-pulse" style={{ width: '70%' }}></div>
             </div>
@@ -346,40 +337,30 @@ export default function AdminRestaurantEditPage() {
     );
   }
 
-
-  // ✅ ERROR STATE (строка 201-212)
   if (!restaurant) {
     return (
       <div className="bg-gradient-to-br from-error-light to-warning-light min-h-screen flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <div className="bg-card rounded-2xl shadow-2xl p-8 border border-error-light">
-            {/* Иконка ошибки */}
             <div className="text-6xl mb-6">❌</div>
-
-            {/* Текст */}
             <h2 className="text-2xl font-bold text-foreground mb-2">Ресторан не найден</h2>
             <p className="text-muted-foreground mb-6">{error || 'К сожалению, этого ресторана больше нет'}</p>
-
-            {/* Кнопка */}
             <Link
-              href="/"
+              href="/partner"
               className="inline-block bg-gradient-to-r from-warning to-rose-500 hover:from-warning/90 hover:to-warning/90 text-white font-semibold px-6 py-3 rounded-lg transition"
             >
-              ← Вернуться на главную
+              ← Вернуться в личный кабинет
             </Link>
           </div>
         </div>
       </div>
     );
   }
-  console.log('📺 Показываем УСПЕХ STATE');
-
 
   const ts = restaurant.timeslots?.[0];
 
   return (
-    <div className="min-h-screen">
-      {/* Toast Notification */}
+    <div className="container mx-auto max-w-5xl px-4 py-8">
       {toast && (
         <Toast
           message={toast.message}
@@ -388,14 +369,12 @@ export default function AdminRestaurantEditPage() {
         />
       )}
 
-      <div className="container mx-auto max-w-5xl px-4 py-8">
+      <div className="container mx-auto max-w-4xl px-4 py-8">
         <Breadcrumbs items={[
-          { label: 'Админ', href: '/admin' },
-          { label: 'Рестораны', href: '/admin' },
-          { label: `Редактирование #${restaurant.id}` }
+          { label: 'Партнер', href: '/partner' },
+          { label: 'Управление' }
         ]} />
 
-        {/* Header */}
         <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold mb-6">✏️ Редактировать ресторан</h1>
@@ -403,7 +382,6 @@ export default function AdminRestaurantEditPage() {
           </div>
         </div>
 
-        {/* TABS */}
         <Tabs defaultValue="info" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="info">Информация</TabsTrigger>
@@ -414,7 +392,6 @@ export default function AdminRestaurantEditPage() {
           <TabsContent value="info">
             <div className="bg-card rounded-xl shadow-md p-6 md:p-8 border border-border">
               <form className="space-y-6" onSubmit={handleSave}>
-                {/* Основные поля */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-2">Название *</label>
@@ -487,7 +464,6 @@ export default function AdminRestaurantEditPage() {
                   </div>
                 </div>
 
-                {/* === ↓↓↓ НОВОЕ ПОЛЕ: ГОРОД ↓↓↓ === */}
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
                     Город <span className="text-error">*</span>
@@ -506,7 +482,6 @@ export default function AdminRestaurantEditPage() {
                     Выберите город, в котором находится ресторан
                   </p>
                 </div>
-                {/* === ↑↑↑ КОНЕЦ НОВОГО ПОЛЯ ↑↑↑ === */}
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">Описание</label>
@@ -518,58 +493,51 @@ export default function AdminRestaurantEditPage() {
                   />
                 </div>
 
-                {/* === ↓↓↓ ВСТАВЬТЕ ЭТОТ БЛОК КОДА ВМЕСТО СТАРОГО РАЗДЕЛА ФОТО ↓↓↓ === */}
-
                 <div className="bg-gradient-to-br from-info-light to-info-light p-5 rounded-lg border-2 border-info/30">
                   <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                     <span>📷</span> Фотографии ресторана
                   </h3>
 
-                  {/* ЗОНА ПРЕДПРОСМОТРА */}
                   {(existingPhotos.length > 0 || photoPreviews.length > 0) && (
                     <div className="mb-4">
                       <p className="text-sm font-semibold text-foreground mb-3">
                         Превью ({existingPhotos.length + selectedPhotos.length} фото)
                       </p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {/* 1. Рендер существующих фото */}
                         {existingPhotos.map((photoUrl) => (
                           <div key={photoUrl} className="relative group">
                             <img
                               src={photoUrl}
-                              alt="Existing photo"
-                              className="w-full h-24 object-cover rounded-lg border-2 border-input"
+                              alt="Restaurant"
+                              className="w-full h-24 object-cover rounded-lg"
                             />
                             <button
                               type="button"
                               onClick={() => {
                                 setExistingPhotos(existingPhotos.filter(p => p !== photoUrl));
-                                setPhotosToDelete(prev => [...prev, photoUrl]);
+                                setPhotosToDelete([...photosToDelete, photoUrl]);
                               }}
-                              className="absolute top-1 right-1 bg-error hover:bg-error/90 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                              className="absolute top-1 right-1 bg-error text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition"
                             >
                               ✕
                             </button>
                           </div>
                         ))}
-                        {/* 2. Рендер превью новых фото */}
-                        {photoPreviews.map((previewUrl, index) => (
-                          <div key={previewUrl} className="relative group">
+
+                        {photoPreviews.map((preview, idx) => (
+                          <div key={idx} className="relative group">
                             <img
-                              src={previewUrl}
-                              alt={`Preview ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg border-2 border-info"
+                              src={preview}
+                              alt="Preview"
+                              className="w-full h-24 object-cover rounded-lg border-2 border-success"
                             />
                             <button
                               type="button"
                               onClick={() => {
-                                // Удаляем и файл, и его превью
-                                setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
-                                setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
-                                // Освобождаем память от превью
-                                URL.revokeObjectURL(previewUrl);
+                                setPhotoPreviews(photoPreviews.filter((_, i) => i !== idx));
+                                setSelectedPhotos(selectedPhotos.filter((_, i) => i !== idx));
                               }}
-                              className="absolute top-1 right-1 bg-error hover:bg-error/90 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                              className="absolute top-1 right-1 bg-error text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition"
                             >
                               ✕
                             </button>
@@ -579,157 +547,50 @@ export default function AdminRestaurantEditPage() {
                     </div>
                   )}
 
-                  {/* КНОПКА ЗАГРУЗКИ */}
-                  <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
-                      Добавить новые фото
-                    </label>
+                  <label className="block cursor-pointer">
                     <input
                       type="file"
                       multiple
                       accept="image/*"
                       onChange={handlePhotoSelect}
-                      className="w-full border-2 border-dashed border-info/50 rounded-lg p-4 cursor-pointer hover:border-info transition"
+                      className="hidden"
                     />
-                  </div>
+                    <div className="border-2 border-dashed border-info rounded-lg p-6 text-center hover:bg-info/5 transition">
+                      <p className="text-sm font-semibold text-foreground">📸 Нажмите для загрузки фото</p>
+                      <p className="text-xs text-muted-foreground">Поддерживаются JPG, PNG, WebP (макс 10 МБ)</p>
+                    </div>
+                  </label>
                 </div>
 
-                {/* === ↑↑↑ КОНЕЦ БЛОКА ↑↑↑ === */}
-
-
-                {/* Кухня */}
                 <div>
-                  <label className="block text-sm font-semibold text-foreground mb-3">Кухня *</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      'Европейская', 'Итальянская', 'Азиатская', 'Японская',
-                      'Русская', 'Грузинская', 'Узбекская', 'Мексиканская',
-                      'Турецкая', 'Вегетарианская', 'Стейк-хаус', 'Бургеры',
-                    ].map((c) => (
-                      <label
-                        key={c}
-                        className="cursor-pointer block text-center border-2 border-input rounded-lg px-4 py-2.5 font-medium hover:border-warning transition"
-                      >
+                  <label className="block text-sm font-semibold text-foreground mb-2">Кухня</label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {['Европейская', 'Азиатская', 'Американская', 'Итальянская', 'Японская', 'Казахская'].map(c => (
+                      <label key={c} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           name="cuisine"
                           value={c}
                           defaultChecked={restaurant.cuisine?.includes(c)}
-                          className="mr-2"
+                          className="w-4 h-4 rounded"
                         />
-                        {c}
+                        <span className="text-sm">{c}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                {/* Настройки акции */}
-                <div className="bg-gradient-to-br from-warning-light to-warning-light p-5 rounded-lg border-2 border-warning/30">
-                  <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <span>⏰</span> Настройки акции
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">
-                        Скидка *
-                      </label>
-                      <select
-                        name="discount"
-                        defaultValue={ts?.discount ?? 20}
-                        className="w-full border-2 border-input rounded-lg p-3 font-semibold focus:border-warning focus:ring-2 focus:ring-warning/20 transition outline-none"
-                      >
-                        <option value={50}>50% - Максимальная скидка</option>
-                        <option value={40}>40% - Высокая скидка</option>
-                        <option value={30}>30% - Средняя скидка</option>
-                        <option value={20}>20% - Стандартная скидка</option>
-                        <option value={10}>10% - Малая скидка</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">
-                        Начало времени
-                      </label>
-                      <input
-                        type="time"
-                        name="time_start"
-                        defaultValue={ts?.time_start?.slice(0, 5) || '15:00'}
-                        className="w-full border-2 border-input rounded-lg p-3 focus:border-warning focus:ring-2 focus:ring-warning/20 transition outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">
-                        Конец времени
-                      </label>
-                      <input
-                        type="time"
-                        name="time_end"
-                        defaultValue={ts?.time_end?.slice(0, 5) || '22:00'}
-                        className="w-full border-2 border-input rounded-lg p-3 focus:border-warning focus:ring-2 focus:ring-warning/20 transition outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">
-                        Дата начала действия *
-                      </label>
-                      <input
-                        type="date"
-                        name="valid_from"
-                        defaultValue={ts?.valid_from || ''}
-                        className="w-full border-2 border-input rounded-lg p-3 focus:border-warning focus:ring-2 focus:ring-warning/20 transition outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">
-                        Дата конца действия *
-                      </label>
-                      <input
-                        type="date"
-                        name="valid_to"
-                        defaultValue={ts?.valid_to || ''}
-                        className="w-full border-2 border-input rounded-lg p-3 focus:border-warning focus:ring-2 focus:ring-warning/20 transition outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">
-                        Макс. столов
-                      </label>
-                      <input
-                        type="number"
-                        name="max_tables"
-                        min={1}
-                        defaultValue={ts?.max_tables || 4}
-                        className="w-full border-2 border-input rounded-lg p-3 focus:border-warning focus:ring-2 focus:ring-warning/20 transition outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Buttons */}
-                <div className="flex gap-4 pt-6">
-                  <Button
+                <div className="flex justify-end gap-4 pt-4 border-t border-border">
+                  <Button variant="outline" asChild>
+                    <Link href="/partner">Отмена</Link>
+                  </Button>
+                  <button
                     type="submit"
                     disabled={saving}
+                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold px-8 py-3 rounded-lg transition shadow-lg text-lg"
                   >
-                    {saving ? '⏳ Сохранение...' : '💾 Сохранить изменения'}
-                  </Button>
-
-                  <Button
-                    asChild
-                    variant="outline"
-                  >
-                    <Link href="/admin">
-                      ✕ Отмена
-                    </Link>
-                  </Button>
-
+                    {saving ? '⏳ Сохранение...' : '✅ Сохранить'}
+                  </button>
                 </div>
               </form>
             </div>
@@ -737,179 +598,130 @@ export default function AdminRestaurantEditPage() {
 
           {/* TAB 2: СКИДКИ */}
           <TabsContent value="discounts">
-            <div className="bg-card rounded-xl shadow-md p-6 md:p-8 border border-border space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold">Управление скидками</h2>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setShowDiscountForm(!showDiscountForm);
-                    setEditingDiscount(null);
-                    setDiscountForm({
-                      discount: '10',
-                      time_start: '15:00',
-                      time_end: '22:00',
-                      valid_from: '',
-                      valid_to: '',
-                      description: 'на все меню',
-                    });
-                  }}
+            <div className="bg-card rounded-xl shadow-md p-6 md:p-8 border border-border">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold">Скидки и акции</h2>
+                <button
+                  onClick={() => setShowDiscountForm(!showDiscountForm)}
+                  className="bg-success text-white px-4 py-2 rounded-lg hover:bg-success/90 transition font-semibold"
                 >
-                  ➕ Добавить скидку
-                </Button>
-
+                  + Добавить скидку
+                </button>
               </div>
 
-              {/* ФОРМА ДОБАВЛЕНИЯ */}
               {showDiscountForm && (
-                <form onSubmit={handleSaveDiscount} className="p-4 bg-info-light rounded-lg border border-info/30 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <form onSubmit={handleSaveDiscount} className="mb-6 p-4 bg-background rounded-lg border border-border">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">
-                        Скидка *
-                      </label>
-                      <select
-                        name="discount"
+                      <label className="block text-sm font-semibold mb-2">Скидка (%)</label>
+                      <input
+                        type="number"
                         value={discountForm.discount}
-                        onChange={(e) => setDiscountForm({ ...discountForm, discount: e.target.value })}
-                        className="w-full border-2 border-input rounded-lg p-3 font-semibold focus:border-warning focus:ring-2 focus:ring-warning/20 transition outline-none"
-                      >
-                        <option value="10">10%</option>
-                        <option value="20">20%</option>
-                        <option value="30">30%</option>
-                        <option value="40">40%</option>
-                        <option value="50">50%</option>
-                      </select>
+                        onChange={(e) => setDiscountForm({...discountForm, discount: e.target.value})}
+                        min="0"
+                        max="100"
+                        className="w-full border-2 border-input rounded-lg p-3"
+                      />
                     </div>
-
                     <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">
-                        Начало времени
-                      </label>
+                      <label className="block text-sm font-semibold mb-2">Начало времени</label>
                       <input
                         type="time"
                         value={discountForm.time_start}
-                        onChange={(e) => setDiscountForm({ ...discountForm, time_start: e.target.value })}
-                        className="w-full border-2 border-input rounded-lg p-3 focus:border-warning focus:ring-2 focus:ring-warning/20 transition outline-none"
+                        onChange={(e) => setDiscountForm({...discountForm, time_start: e.target.value})}
+                        className="w-full border-2 border-input rounded-lg p-3"
                       />
                     </div>
-
                     <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">
-                        Конец времени
-                      </label>
+                      <label className="block text-sm font-semibold mb-2">Конец времени</label>
                       <input
                         type="time"
                         value={discountForm.time_end}
-                        onChange={(e) => setDiscountForm({ ...discountForm, time_end: e.target.value })}
-                        className="w-full border-2 border-input rounded-lg p-3 focus:border-warning focus:ring-2 focus:ring-warning/20 transition outline-none"
+                        onChange={(e) => setDiscountForm({...discountForm, time_end: e.target.value})}
+                        className="w-full border-2 border-input rounded-lg p-3"
                       />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">
-                        Дата начала действия *
-                      </label>
+                      <label className="block text-sm font-semibold mb-2">Дата начала</label>
                       <input
                         type="date"
                         value={discountForm.valid_from}
-                        onChange={(e) => setDiscountForm({ ...discountForm, valid_from: e.target.value })}
-                        required
-                        className="w-full border-2 border-input rounded-lg p-3 focus:border-warning focus:ring-2 focus:ring-warning/20 transition outline-none"
+                        onChange={(e) => setDiscountForm({...discountForm, valid_from: e.target.value})}
+                        className="w-full border-2 border-input rounded-lg p-3"
                       />
                     </div>
-
                     <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">
-                        Дата конца действия *
-                      </label>
+                      <label className="block text-sm font-semibold mb-2">Дата конца</label>
                       <input
                         type="date"
                         value={discountForm.valid_to}
-                        onChange={(e) => setDiscountForm({ ...discountForm, valid_to: e.target.value })}
-                        required
-                        className="w-full border-2 border-input rounded-lg p-3 focus:border-warning focus:ring-2 focus:ring-warning/20 transition outline-none"
+                        onChange={(e) => setDiscountForm({...discountForm, valid_to: e.target.value})}
+                        className="w-full border-2 border-input rounded-lg p-3"
                       />
                     </div>
                   </div>
-
                   <div className="flex gap-2">
-                    <Button
+                    <button
                       type="submit"
                       disabled={saving}
+                      className="bg-success text-white px-4 py-2 rounded-lg hover:bg-success/90 disabled:opacity-50 font-semibold"
                     >
-                      {editingDiscount ? '💾 Обновить' : '➕ Добавить'}
-                    </Button>
-
-                    <Button
+                      {editingDiscount ? 'Обновить' : 'Добавить'}
+                    </button>
+                    <button
                       type="button"
-                      variant="outline"
                       onClick={() => {
                         setShowDiscountForm(false);
                         setEditingDiscount(null);
                       }}
+                      className="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500 font-semibold"
                     >
-                      ✕ Отмена
-                    </Button>
-
+                      Отмена
+                    </button>
                   </div>
                 </form>
               )}
 
-              {/* СПИСОК СКИДОК */}
               {loadingDiscounts ? (
-                <p className="text-sm text-muted-foreground">Загрузка скидок...</p>
+                <p>⏳ Загрузка скидок...</p>
               ) : discounts.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Скидки не добавлены</p>
+                <p className="text-gray-500">Нет скидок</p>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {discounts.map((discount) => (
-                    <div
-                      key={discount.id}
-                      className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-gray-50"
-                    >
+                    <div key={discount.id} className="flex justify-between items-center p-4 bg-background rounded-lg border border-border hover:shadow-md transition">
                       <div>
-                        <p className="font-semibold">{discount.discount}% скидка</p>
-                        <p className="text-sm text-muted-foreground">
-                          {discount.time_start} - {discount.time_end} · {discount.valid_from} до {discount.valid_to}
-                        </p>
+                        <p className="font-semibold">{discount.discount}% - {discount.time_start} до {discount.time_end}</p>
+                        <p className="text-sm text-gray-500">{discount.valid_from} - {discount.valid_to}</p>
                       </div>
-
                       <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
+                        <button
                           onClick={() => {
                             setEditingDiscount(discount);
                             setDiscountForm({
                               discount: String(discount.discount),
-                              time_start: discount.time_start.substring(0, 5),  // ← Только HH:MM
-                              time_end: discount.time_end.substring(0, 5),      // ← Только HH:MM
+                              time_start: discount.time_start,
+                              time_end: discount.time_end,
                               valid_from: discount.valid_from,
                               valid_to: discount.valid_to,
                               description: discount.description || 'на все меню',
                             });
                             setShowDiscountForm(true);
                           }}
+                          className="bg-warning text-white px-3 py-1 rounded text-sm hover:bg-warning/90 font-semibold"
                         >
-                          ✏️ Изменить
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
+                          Редактировать
+                        </button>
+                        <button
                           onClick={() => handleDeleteDiscount(discount.id)}
+                          className="bg-error text-white px-3 py-1 rounded text-sm hover:bg-error/90 font-semibold"
                         >
                           Удалить
-                        </Button>
+                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
-
               )}
             </div>
           </TabsContent>

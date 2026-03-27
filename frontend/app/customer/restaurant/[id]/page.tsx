@@ -39,7 +39,7 @@ function Lightbox({
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
-      <button onClick={onClose} className="absolute top-4 right-4 text-white" type="button">
+      <button onClick={onClose} className="absolute top-4 right-4 text-white hover:text-orange-400 transition-colors" type="button">
         <X className="w-8 h-8" />
       </button>
       <img
@@ -48,10 +48,10 @@ function Lightbox({
         className="max-w-5xl max-h-[90vh] object-contain"
         loading="lazy"
       />
-      <button onClick={onPrev} className="absolute left-4 text-white" type="button">
+      <button onClick={onPrev} className="absolute left-4 text-white hover:text-orange-400 transition-colors" type="button">
         <ChevronLeft className="w-9 h-9" />
       </button>
-      <button onClick={onNext} className="absolute right-4 text-white" type="button">
+      <button onClick={onNext} className="absolute right-4 text-white hover:text-orange-400 transition-colors" type="button">
         <ChevronRight className="w-9 h-9" />
       </button>
     </div>
@@ -73,7 +73,7 @@ const HeroGallery = React.memo(({
       <button
         type="button"
         onClick={() => onOpen(0)}
-        className="md:col-span-2 rounded-xl overflow-hidden border border-border bg-card"
+        className="md:col-span-2 rounded-xl overflow-hidden border border-border bg-card hover:border-primary/40 transition-colors"
       >
         <img src={main} alt="" className="h-72 md:h-80 w-full object-cover" loading="lazy" />
       </button>
@@ -83,7 +83,7 @@ const HeroGallery = React.memo(({
             key={`photo-${idx}`}
             type="button"
             onClick={() => onOpen(idx + 1)}
-            className="rounded-xl overflow-hidden border border-border bg-card"
+            className="rounded-xl overflow-hidden border border-border bg-card hover:border-primary/40 transition-colors"
           >
             <img src={p} alt="" className="h-36 md:h-[156px] w-full object-cover" loading="lazy" />
           </button>
@@ -151,7 +151,7 @@ export default function RestaurantDetail() {
   if (loading || !restaurantId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -164,7 +164,7 @@ export default function RestaurantDetail() {
             <h2 className="text-xl font-bold">Ошибка</h2>
           </div>
           <p>{error}</p>
-          <Button className="mt-4 w-full" onClick={() => router.push('/')}>Главная</Button>
+          <Button className="mt-4 w-full bg-primary hover:bg-primary/90 text-white" onClick={() => router.push('/')}>Главная</Button>
         </Card>
       </div>
     );
@@ -174,7 +174,7 @@ export default function RestaurantDetail() {
       <div className="min-h-screen flex items-center justify-center">
         <Card className="p-8 max-w-md">
           <h2 className="text-xl font-bold text-destructive mb-2">Ресторан не найден</h2>
-          <Button className="mt-4 w-full" onClick={() => router.push('/')}>Главная</Button>
+          <Button className="mt-4 w-full bg-primary hover:bg-primary/90 text-white" onClick={() => router.push('/')}>Главная</Button>
         </Card>
       </div>
     );
@@ -202,20 +202,30 @@ export default function RestaurantDetail() {
           />
 
           <Tabs value={tab} onValueChange={(v) => setTab(v as TabValue)} className="w-full">
-            <TabsList className="w-full justify-start">
-              <TabsTrigger value="main">О ресторане</TabsTrigger>
-              <TabsTrigger value="reviews">Отзывы</TabsTrigger>
+            <TabsList className="w-full justify-start bg-muted">
+              <TabsTrigger
+                value="main"
+                className="data-[state=active]:bg-primary data-[state=active]:text-white"
+              >
+                О ресторане
+              </TabsTrigger>
+              <TabsTrigger
+                value="reviews"
+                className="data-[state=active]:bg-primary data-[state=active]:text-white"
+              >
+                Отзывы
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="main" className="mt-6">
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-lg font-bold mb-4">Информация</h2>
+                  <h2 className="text-lg font-bold mb-4 text-foreground">Информация</h2>
                   <RestaurantInfoCard restaurant={restaurant} />
                 </div>
                 {restaurant.description && (
                   <Card className="p-6">
-                    <h2 className="text-lg font-bold mb-4">О ресторане</h2>
+                    <h2 className="text-lg font-bold mb-4 text-foreground">О ресторане</h2>
                     <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
                       {restaurant.description}
                     </p>
@@ -226,7 +236,7 @@ export default function RestaurantDetail() {
 
             <TabsContent value="reviews" className="mt-6">
               <Card className="p-6">
-                <h2 className="text-lg font-bold mb-4">Отзывы</h2>
+                <h2 className="text-lg font-bold mb-4 text-foreground">Отзывы</h2>
                 <p className="text-muted-foreground">Здесь будут отзывы посетителей.</p>
               </Card>
             </TabsContent>
@@ -240,7 +250,7 @@ export default function RestaurantDetail() {
               restaurantId={restaurantId}
               restaurantName={restaurant.name}
             />
-            )}
+          )}
         </div>
 
       </div>

@@ -20,7 +20,6 @@ interface Restaurant {
   badgeType?: BadgeType;
 }
 
-
 interface RestaurantCardProps {
   restaurant: Restaurant;
   getCategoryIcon: (cat: string) => string;
@@ -64,11 +63,11 @@ export default function RestaurantCard({ restaurant, getCategoryIcon }: Restaura
   };
 
   return (
-    <Link href={`/restaurant/${restaurant.id}`}>
-      <div className="bg-card/80 backdrop-blur-sm rounded-xl overflow-hidden border border-border/50 hover:border-border/70 transition-colors duration-300 cursor-pointer h-full flex flex-col">
-  
+    <Link href={`/customer/restaurant/${restaurant.id}`}>
+      <div className="bg-card/80 backdrop-blur-sm rounded-xl overflow-hidden border border-border/50 transition-colors duration-300 cursor-pointer h-full flex flex-col">
+
         {/* Image Carousel Section */}
-        <div className="relative h-56 bg-gradient-to-br from-gray-50 to-gray-50 overflow-hidden group">
+        <div className="relative h-56 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden group">
           {currentPhoto ? (
             <img
               src={currentPhoto}
@@ -82,7 +81,7 @@ export default function RestaurantCard({ restaurant, getCategoryIcon }: Restaura
             </div>
           )}
 
-          {/* Badge "Новый" - Top Left */}
+          {/* Badge - Top Left */}
           {restaurant.badgeType && (
             <Badge className={`absolute top-3 left-3 ${getBadgeConfig(restaurant.badgeType).bgColor} ${getBadgeConfig(restaurant.badgeType).textColor} border-0 text-xs`}>
               {getBadgeConfig(restaurant.badgeType).label}
@@ -92,11 +91,11 @@ export default function RestaurantCard({ restaurant, getCategoryIcon }: Restaura
           {/* Favorite Button - Top Right */}
           <button
             onClick={handleFavoriteClick}
-            className="absolute top-3 right-3 bg-card/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-gray-50/80 transition-colors border border-border/50"
+            className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-colors border border-gray-200"
           >
             <Heart
               size={20}
-              className={isFavorite ? 'fill-error text-error' : 'text-muted-foreground'}
+              className={isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}
             />
           </button>
 
@@ -116,19 +115,13 @@ export default function RestaurantCard({ restaurant, getCategoryIcon }: Restaura
 
               {/* Navigation Arrows */}
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  prevPhoto();
-                }}
+                onClick={(e) => { e.preventDefault(); prevPhoto(); }}
                 className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <ChevronLeft size={20} />
               </button>
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  nextPhoto();
-                }}
+                onClick={(e) => { e.preventDefault(); nextPhoto(); }}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <ChevronRight size={20} />
@@ -139,66 +132,65 @@ export default function RestaurantCard({ restaurant, getCategoryIcon }: Restaura
 
         {/* Content Section */}
         <div className="flex-1 flex flex-col p-4">
+
           {/* Restaurant Name */}
-<h3 className="text-lg font-bold text-foreground line-clamp-2 mb-2">
-  {restaurant.name}
-</h3>
+          <h3 className="text-lg font-bold text-foreground line-clamp-2 mb-2">
+            {restaurant.name}
+          </h3>
 
-{/* Address */}
-{restaurant.address && (
-  <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
-    📍 {restaurant.address}
-  </p>
-)}
+          {/* Address */}
+          {restaurant.address && (
+            <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
+              📍 {restaurant.address}
+            </p>
+          )}
 
+          {/* Cuisine & Avg Price */}
+          <div className="text-sm text-muted-foreground flex flex-wrap gap-1 mb-2">
+            {restaurant.cuisine?.length > 0 && (
+              <span>{restaurant.cuisine.slice(0, 2).join(' • ')}</span>
+            )}
+            {restaurant.cuisine?.length > 0 && restaurant.avg_check && (
+              <span>•</span>
+            )}
+            {restaurant.avg_check && (
+              <span>Средний чек {restaurant.avg_check}₸</span>
+            )}
+          </div>
 
-{/* Cuisine & Avg Price */}
-<div className="text-sm text-foreground flex flex-wrap gap-1 mb-2">
-  {restaurant.cuisine?.length > 0 && (
-    <span>{restaurant.cuisine.slice(0, 2).join(' • ')}</span>
-  )}
-  {restaurant.cuisine?.length > 0 && restaurant.avg_check && (
-    <span>•</span>
-  )}
-  {restaurant.avg_check && (
-    <span>Средний чек {restaurant.avg_check}₸</span>
-  )}
-</div>
+          {/* Rating */}
+          {restaurant.rating > 0 && (
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    size={14}
+                    className={i < Math.round(restaurant.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+                  />
+                ))}
+              </div>
+              <span className="font-semibold text-foreground text-sm">{restaurant.rating.toFixed(1)}</span>
+            </div>
+          )}
 
-{/* Rating */}
-{restaurant.rating > 0 && (
-  <div className="flex items-center gap-2 mb-2">
-    <div className="flex gap-0.5">
-      {[...Array(5)].map((_, i) => (
-        <Star
-          key={i}
-          size={14}
-          className={i < Math.round(restaurant.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}
-        />
-      ))}
-    </div>
-    <span className="font-semibold text-foreground text-sm">{restaurant.rating.toFixed(1)}</span>
-  </div>
-)}
-
-{/* Discount Badge */}
-{maxDiscount > 0 && (
-  <div className="flex items-center gap-2 mb-3">
-    <Badge className="bg-foreground text-background text-sm font-semibold px-3 py-1">
-      До -{maxDiscount}%
-    </Badge>
-    {restaurant.popularity && (
-      <Badge className="bg-warning-light text-warning text-xs">
-        🍽️ Популярно x{restaurant.popularity}
-      </Badge>
-    )}
-  </div>
-)}
-
+          {/* Discount Badge */}
+          {maxDiscount > 0 && (
+            <div className="flex items-center gap-2 mb-3">
+              <Badge className="bg-secondary text-white text-sm font-semibold px-3 py-1">
+                До -{maxDiscount}%
+              </Badge>
+              {restaurant.popularity && (
+                <Badge className="bg-orange-100 text-secondary text-xs font-medium">
+                  🍽️ Популярно x{restaurant.popularity}
+                </Badge>
+              )}
+            </div>
+          )}
 
           {/* Book Button */}
-          <button className="w-full mt-auto bg-booking hover:bg-booking-hover text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
-            Забронировать 
+          <button className="w-full mt-auto bg-primary hover:bg-primary-dark text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200">
+            Забронировать
           </button>
 
         </div>

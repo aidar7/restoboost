@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
@@ -8,13 +8,22 @@ import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, googleLogin, isLoading } = useAuth();
+  const { login, googleLogin, isLoading, user } = useAuth();  // ← ХУК ЗДЕСЬ!
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Следим за изменением user
+  useEffect(() => {
+    if (user && user.id) {
+      // Только для customer!
+      router.push('/');
+    }
+  }, [user, router]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -30,7 +39,6 @@ export default function LoginPage() {
       setError('');
       const token = credentialResponse.credential;
       await googleLogin(token);
-      router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Google login failed');
     }
@@ -47,10 +55,10 @@ export default function LoginPage() {
 
     try {
       await login(formData.email, formData.password);
-      router.push('/');
+      // Редирект произойдёт в useEffect!
     } catch (err) {
+      console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Ошибка входа');
-    } finally {
       setIsSubmitting(false);
     }
   };

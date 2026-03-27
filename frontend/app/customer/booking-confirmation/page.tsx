@@ -135,18 +135,7 @@ function BookingConfirmationContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-50">
-      {/* ХЕДЕР */}
-      <div className="sticky top-0 z-40 bg-card border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-foreground">Подтверждение брони</h1>
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="flex items-center gap-2">
-              <Home size={18} />
-              На главную
-            </Button>
-          </Link>
-        </div>
-      </div>
+      
 
       <main className="max-w-2xl mx-auto px-4 py-8">
         {/* Success Message */}

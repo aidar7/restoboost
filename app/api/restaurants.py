@@ -134,6 +134,63 @@ async def get_restaurants(
         traceback.print_exc()
         return []
 
+@router.get("/partner/{partner_id}")
+async def get_partner_restaurant(partner_id: int):
+    """
+    Получить ресторан партнёра по ID партнёра
+    """
+    try:
+        print(f"🔍 GET /api/restaurants/partner/{partner_id}")
+        
+        # Получаем restaurant_id из таблицы restaurant_owners
+        owners = await db.get(
+            "restaurant_owners",
+            filters={"user_id": f"eq.{partner_id}"},
+            limit=1
+        )
+
+        if not owners:
+            raise HTTPException(status_code=404, detail="У партнёра нет ресторана")
+
+        restaurant_id = owners[0]["restaurant_id"]
+
+        # Получаем данные ресторана
+        restaurants = await db.get(
+            "restaurants",
+            filters={"id": f"eq.{restaurant_id}"},
+            limit=1
+        )
+
+        
+        if not restaurants:
+            raise HTTPException(status_code=404, detail="У партнёра нет ресторана")
+        
+        restaurant = restaurants[0]
+        
+        # Добавляем таймслоты
+        today = datetime.now().strftime("%Y-%m-%d")
+        try:
+            timeslots = await db.get(
+                "discount_rules",
+                filters={
+                    "restaurant_id": f"eq.{restaurant['id']}",
+                    "is_active": "eq.true",
+                    "valid_from": f"lte.{today}",
+                    "valid_to": f"gte.{today}"
+                }
+            )
+            restaurant["timeslots"] = timeslots or []
+        except Exception as e:
+            print(f"⚠️ Could not load timeslots: {e}")
+            restaurant["timeslots"] = []
+        
+        return restaurant
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка получения ресторана")
 
 @router.get("/{restaurant_id}")
 async def get_restaurant(restaurant_id: int):
@@ -192,6 +249,7 @@ async def get_restaurant(restaurant_id: int):
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
+
 @router.post("/")
 async def create_restaurant(
     name: str = Form(...),
@@ -206,6 +264,7 @@ async def create_restaurant(
     discount: int = Form(...),
     time_start: str = Form(...),
     time_end: str = Form(...),
+    owner_id: Optional[int] = Form(None),
     photos: List[UploadFile] = File(default=[])
 ):
     """
@@ -252,6 +311,20 @@ async def create_restaurant(
 
         restaurant_id = restaurant["id"]
 
+        # Создаём запись в restaurant_owners если передан owner_id
+        if owner_id:
+            print(f"📝 Creating restaurant_owner link: user_id={owner_id}, restaurant_id={restaurant_id}")
+            owner_data = {
+                "user_id": owner_id,
+                "restaurant_id": restaurant_id
+            }
+            
+            owner_result = await db.post("restaurant_owners", owner_data, return_rep=True)
+            if not owner_result:
+                print(f"⚠️ Warning: Could not create restaurant_owner link")
+            else:
+                print(f"✅ Restaurant owner link created")
+
         print(f"📝 Creating restaurant_service for restaurant {restaurant_id}...")
         service_id = str(uuid.uuid4())
 
@@ -292,9 +365,9 @@ async def create_restaurant(
         timeslot_data = {
             "service_id": service_id,
             "restaurant_id": restaurant_id,
-            "start_time": time_start,
-            "end_time": time_end,
-            "discount_percentage": int(discount),
+            "time_start": time_start,      
+            "time_end": time_end,
+            "discount": int(discount),
             "description": "на все меню",
             "is_active": True,
             "valid_from": today.isoformat(),
@@ -622,3 +695,45 @@ async def update_restaurant(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=400, detail=f"Ошибка обновления: {str(e)}")
+    
+@router.delete("/{restaurant_id}")
+async def delete_restaurant(restaurant_id: int):
+    """
+    Удалить ресторан со всеми связанными данными
+    """
+    try:
+        print(f"\n🗑️ DELETE /api/restaurants/{restaurant_id}")
+        
+        # 1️⃣ Удаляем скидки
+        await db.delete(
+            "discount_rules",
+            filters={"restaurant_id": f"eq.{restaurant_id}"}
+        )
+        print(f"✅ Deleted discount_rules")
+        
+        # 2️⃣ Удаляем услуги
+        await db.delete(
+            "restaurant_services",
+            filters={"restaurant_id": f"eq.{restaurant_id}"}
+        )
+        print(f"✅ Deleted restaurant_services")
+        
+        # 3️⃣ Удаляем владельца ресторана
+        await db.delete(
+            "restaurant_owners",
+            filters={"restaurant_id": f"eq.{restaurant_id}"}
+        )
+        print(f"✅ Deleted restaurant_owners")
+        
+        # 4️⃣ Удаляем сам ресторан
+        await db.delete(
+            "restaurants",
+            filters={"id": f"eq.{restaurant_id}"}
+        )
+        print(f"✅ Deleted restaurant")
+        
+        return {"success": True, "message": "Ресторан удален"}
+    
+    except Exception as e:
+        print(f"❌ Delete error: {e}")
+        raise HTTPException(status_code=500, detail=f"Ошибка удаления: {str(e)}")

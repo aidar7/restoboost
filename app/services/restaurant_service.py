@@ -273,8 +273,8 @@ class RestaurantService:
         
             restaurants = await db.get(
                 "restaurants", 
-                limit=limit,
-                order="created_at.desc"
+                limit=limit
+                # Убрали order - может быть причина проблемы
             )
             
             print(f"db.get restaurants result: {restaurants}")
@@ -284,6 +284,7 @@ class RestaurantService:
         except Exception as e:
             print(f"❌ Ошибка получения ресторанов: {e}")
             return []
+
 
     
     @staticmethod

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -47,80 +48,187 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* ===== FRESH MINT PALETTE ===== */
   
-  /* Цвета для кнопок бронирования */
-  --booking: oklch(0.55 0.15 185);
-  --booking-hover: oklch(0.45 0.15 185);
+  /* Primary — мятно-зеленый */
+  --primary: oklch(0.62 0.14 165);
+  --primary-dark: oklch(0.52 0.14 165);
+  --primary-darker: oklch(0.42 0.14 165);
+  --primary-darkest: oklch(0.32 0.12 165);  /* Самый темный для футера */
+  --primary-light: oklch(0.72 0.12 165);
+  --primary-foreground: oklch(1 0 0);
+  
+  /* Secondary — спокойный синий */
+  --secondary: oklch(0.48 0.12 215);
+  --secondary-dark: oklch(0.38 0.12 215);
+  --secondary-darker: oklch(0.28 0.10 215);
+  --secondary-darkest: oklch(0.22 0.08 215);
+  --secondary-light: oklch(0.58 0.10 215);
+  --secondary-foreground: oklch(1 0 0);
+  
+  /* Accent — лимонный акцент */
+  --accent: oklch(0.65 0.18 85);
+  --accent-dark: oklch(0.55 0.18 85);
+  --accent-light: oklch(0.75 0.15 85);
+  --accent-foreground: oklch(0.20 0.06 85);
+  
+  /* Background — светлый фон */
+  --background: oklch(0.98 0.01 145);
+  --foreground: var(--text-primary);
+  
+  /* Surface — карточки, контейнеры */
+  --card: oklch(1 0 0);
+  --card-foreground: var(--text-primary);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--text-primary);
+  
+  /* Muted элементы */
+  --muted: oklch(0.96 0.01 145);
+  --muted-foreground: var(--text-muted);
+  
+  /* Destructive (ошибки, удаление) */
+  --destructive: oklch(0.62 0.18 25);
+  --destructive-foreground: oklch(1 0 0);
+  
+  /* Границы и кольца — убираем черные линии, делаем очень светлыми */
+  --border: oklch(0.92 0.02 145 / 0.3); /* Полупрозрачная граница */
+  --input: oklch(0.92 0.02 145 / 0.3);
+  --ring: var(--primary-light);
+  
+  /* Радиус */
+  --radius: 0.625rem;
+  
+  /* Charts — адаптированы под палитру */
+  --chart-1: var(--primary);
+  --chart-2: var(--secondary);
+  --chart-3: var(--accent);
+  --chart-4: var(--primary-light);
+  --chart-5: var(--secondary-light);
+  
+  /* Sidebar — адаптирован под палитру */
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: var(--accent-light);
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border: oklch(0.92 0.02 145 / 0.2);
+  --sidebar-ring: var(--primary-light);
+  
+  /* Text — текст */
+  --text-primary: oklch(0.20 0.06 165);
+  --text-secondary: oklch(0.40 0.05 165);
+  --text-muted: oklch(0.60 0.03 165);
+  --text-inverse: oklch(0.98 0.01 145);
+  
+  /* Status — для скидок, акций */
+  --success: oklch(0.62 0.14 165);
+  --warning: oklch(0.68 0.18 85);
+  --error: oklch(0.62 0.18 25);
+  --info: oklch(0.55 0.12 215);
+  
+  /* Цвета для кнопок бронирования (адаптированы под Fresh Mint) */
+  --booking: var(--secondary);
+  --booking-hover: var(--secondary-dark);
+  
+  /* Gradient — для Hero блока */
+  --gradient-start: var(--primary-dark);
+  --gradient-mid: var(--primary);
+  --gradient-end: var(--secondary);
+  
+  /* Shadows — мягкие тени вместо черных линий */
+  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.03);
+  --shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.08);
+  --shadow-primary: 0 4px 14px 0 oklch(0.62 0.14 165 / 0.2);
+  --shadow-card: 0 2px 8px oklch(0 0 0 / 0.04), 0 4px 16px oklch(0 0 0 / 0.02);
+  --shadow-card-hover: 0 8px 24px oklch(0 0 0 / 0.08), 0 2px 4px oklch(0 0 0 / 0.04);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Fresh Mint — Dark Mode */
+  
+  /* Primary — мятно-зеленый (ярче для темной темы) */
+  --primary: oklch(0.68 0.14 165);
+  --primary-dark: oklch(0.58 0.14 165);
+  --primary-light: oklch(0.78 0.12 165);
+  --primary-foreground: oklch(0.20 0.06 165);
+  --primary-darkest: oklch(0.12 0.08 165);
+  
+  /* Secondary — спокойный синий */
+  --secondary: oklch(0.58 0.12 215);
+  --secondary-dark: oklch(0.48 0.12 215);
+  --secondary-light: oklch(0.68 0.10 215);
+  --secondary-foreground: oklch(0.98 0.01 215);
+  
+  /* Accent — лимонный акцент */
+  --accent: oklch(0.72 0.18 85);
+  --accent-dark: oklch(0.62 0.18 85);
+  --accent-light: oklch(0.82 0.15 85);
+  --accent-foreground: oklch(0.20 0.06 85);
+  
+  /* Background — темный фон */
+  --background: oklch(0.18 0.04 165);
+  --foreground: oklch(0.92 0.02 145);
+  
+  /* Surface — карточки, контейнеры */
+  --card: oklch(0.22 0.04 165);
+  --card-foreground: oklch(0.92 0.02 145);
+  --popover: oklch(0.22 0.04 165);
+  --popover-foreground: oklch(0.92 0.02 145);
+  
+  /* Muted элементы */
+  --muted: oklch(0.26 0.04 165);
+  --muted-foreground: oklch(0.68 0.03 145);
+  
+  /* Destructive (ошибки, удаление) */
+  --destructive: oklch(0.68 0.18 25);
+  --destructive-foreground: oklch(1 0 0);
+  
+  /* Границы и кольца — очень тонкие, светящиеся */
+  --border: oklch(1 0 0 / 0.08);
+  --input: oklch(1 0 0 / 0.12);
+  --ring: var(--primary-light);
+  
+  /* Text — текст (темная тема) */
+  --text-primary: oklch(0.92 0.02 145);
+  --text-secondary: oklch(0.72 0.03 145);
+  --text-muted: oklch(0.58 0.03 145);
+  --text-inverse: oklch(0.20 0.06 165);
+  
+  /* Sidebar — темная тема */
+  --sidebar: oklch(0.20 0.04 165);
+  --sidebar-foreground: oklch(0.92 0.02 145);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: oklch(0.20 0.06 165);
+  --sidebar-accent: var(--accent-dark);
+  --sidebar-accent-foreground: oklch(0.92 0.02 145);
+  --sidebar-border: oklch(1 0 0 / 0.08);
+  --sidebar-ring: var(--primary-light);
   
   /* Цвета для кнопок бронирования (темная тема) */
-  --booking: oklch(0.65 0.15 185);
-  --booking-hover: oklch(0.55 0.15 185);
+  --booking: var(--secondary-light);
+  --booking-hover: var(--secondary);
+  
+  /* Gradient — для Hero блока (темная тема) */
+  --gradient-start: oklch(0.42 0.14 165);
+  --gradient-mid: oklch(0.58 0.14 165);
+  --gradient-end: oklch(0.48 0.12 215);
+  
+  /* Shadows — темная тема */
+  --shadow-card: 0 2px 8px oklch(0 0 0 / 0.2), 0 4px 16px oklch(0 0 0 / 0.1);
+  --shadow-card-hover: 0 8px 24px oklch(0 0 0 / 0.3), 0 2px 4px oklch(0 0 0 / 0.2);
+}
+
+/* Утилиты */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
 }
 
 @layer utilities {
@@ -128,16 +236,46 @@
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
+  
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+  
+  /* Кастомные классы для карточек */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    transition: all 0.2s ease;
+  }
+  
+  .card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+  
+  /* Убираем границы у header и навигации */
+  header,
+  nav,
+  .header,
+  .navigation {
+    border-bottom: none !important;
+    box-shadow: none !important;
   }
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
+  
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* Убираем все дефолтные границы у header и навигации */
+  header,
+  nav {
+    border-bottom-width: 0 !important;
   }
 }
